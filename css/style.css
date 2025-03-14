@@ -1,0 +1,247 @@
+body {
+    font-family: 'Helvetica', 'Arial', sans-serif !important;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #fff !important;
+}
+
+/* Navegación */
+
+.nav_container {
+    background-color: #F6EBD5 !important;
+    margin: 0;
+    padding: 0 !important;
+}
+
+.logo_container {
+    width: 70px;
+    height: 80px;
+    position: relative;
+    left: 20px;
+}
+
+.logo {
+    width: 80px;
+    height: 100%;
+}
+
+.color {
+    box-shadow: -590px 90px 800px 110px #F6EBD5;
+    width: 1px;
+    margin: auto;
+}
+
+/* index - Admin */
+
+
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    color: #333;
+    line-height: 1.6;
+    box-sizing: border-box;
+}
+
+h1,
+h2 {
+    color: #96B394 ;
+    text-align: center;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #96B394 ;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+/* Header */
+
+
+
+/* Main Content */
+.content {
+    padding: 20px;
+    margin: auto;
+    width: 90%;
+    max-width: 1200px;
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+form input,
+form select {
+    flex: 1;
+    min-width: 150px;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+form button {
+    background-color: #96B394 ;
+    color: #fff;
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+th,
+td {
+    text-align: left;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #96B394 ;
+    color: #fff;
+}
+
+td {
+    background-color: #f9f9f9;
+}
+
+/* Estilo para el botón de eliminar */
+.delete-btn {
+    background-color: #e63946;
+    /* Rojo intenso */
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+    color: #fff !important;
+    text-decoration: none;
+    background-color: #b71c1c;
+    /* Rojo más oscuro al pasar el cursor */
+}
+
+/* Estilo para el botón de editar */
+.edit-btn {
+    background-color: #96B394 ;
+    /* Violeta */
+    color: #fff;
+    border: none;
+    padding: 5px 2px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 75px;
+    transition: background-color 0.3s ease;
+    margin-top: 6px;
+}
+
+.edit-btn:hover {
+    background-color:rgb(94, 117, 92);
+    /* Violeta más oscuro al pasar el cursor */
+}
+
+
+.nota-btn {
+    background-color: rgb(47, 175, 122);
+    /* Verde */
+    color: #fff;
+    border: none;
+    padding: 5px 2px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 75px;
+    transition: background-color 0.3s ease;
+    margin-top: 2px;
+}
+
+.nota-btn:hover {
+    background-color:rgb(80, 133, 76);
+    /* Violeta más oscuro al pasar el cursor */
+}
+
+/* Modal Form */
+#formularioEdicion {
+    display: none;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -20%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-width: 400px;
+    width: 90%;
+}
+
+#formularioEdicion form input {
+    width: calc(100% - 20px);
+    margin-bottom: 10px;
+}
+
+#formularioEdicion button {
+    width: 48%;
+    margin: 5px 1%;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    form {
+        flex-direction: column;
+    }
+
+    form input,
+    form select,
+    form button {
+        width: 100%;
+    }
+
+    table {
+        font-size: 14px;
+        overflow-x: auto;
+        display: block;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+
+    table th,
+    table td {
+        white-space: nowrap;
+    }
+}
