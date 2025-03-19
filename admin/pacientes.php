@@ -13,7 +13,7 @@ $profesional = $_SESSION['profesional'];
 // Horarios disponibles por profesional en Sante
 if (!isset($_SESSION['disponibilidadProfesionales'])) {
     $_SESSION['disponibilidadProfesionales'] = [
-        'Lucia Foricher' => [
+        'Lucia foricher' => [
             'Monday' => ['08:00', '09:00', '10:00', '11:00'],
             'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
             'Friday' => ['08:00', '09:00', '10:00', '11:00'],
@@ -103,7 +103,7 @@ function deshabilitarHorarios(&$disponibilidad, $profesional) {
 // Función para habilitar horarios
 function habilitarHorarios(&$disponibilidad, $profesional) {
     $originalDisponibilidad = [
-        'Lucia Foricher' => [
+        'Lucia foricher' => [
             'Monday' => ['08:00', '09:00', '10:00', '11:00'],
             'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
             'Friday' => ['08:00', '09:00', '10:00', '11:00'],
@@ -193,37 +193,10 @@ $profesional = $_SESSION['profesional'];
 
 // Inicializar la consulta para obtener pacientes
 $conn = new mysqli('localhost', 'root', '', 'sante'); // Definir la conexión a la base de datos
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
-}
-
 $sql = "SELECT * FROM turnos WHERE profesional = ?";
 $params = [$profesional];
 $param_types = 's';
 
-// Agregar filtros de búsqueda por nombre y obra social
-if ($busqueda_nombre != '') {
-    $sql .= " AND nombre LIKE ?";
-    $params[] = "%$busqueda_nombre%";
-    $param_types .= 's';
-}
-
-if ($busqueda_obra_social != '') {
-    $sql .= " AND obra_social LIKE ?";
-    $params[] = "%$busqueda_obra_social%";
-    $param_types .= 's';
-}
-
-// Filtrar por el mes actual, meses anteriores o el mes siguiente
-if ($ver_anteriores) {
-    $sql .= " AND (MONTH(fecha) < MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())) 
-              OR (YEAR(fecha) < YEAR(CURDATE()))";
-} elseif ($ver_siguientes) {
-    $sql .= " AND (MONTH(fecha) > MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())) 
-              OR (YEAR(fecha) > YEAR(CURDATE()))";
-} else {
-    $sql .= " AND MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())";
-}
 
 $sql .= " ORDER BY fecha";
 $stmt = $conn->prepare($sql);
@@ -254,7 +227,7 @@ $dias_semana = [
 // Agrupar pacientes por día de la semana
 $pacientes_por_dia = [];
 while ($row = $pacientes->fetch_assoc()) {
-    $dia_semana = date('w', strtotime($row['fecha'])); // 0 (para domingo) a 6 (para sábado)
+    $dia_semana = date('N', strtotime($row['fecha'])) % 7; // 0 (para domingo) a 6 (para sábado)
     if (!isset($pacientes_por_dia[$dia_semana])) {
         $pacientes_por_dia[$dia_semana] = [];
     }
@@ -270,50 +243,54 @@ $colores_servicio = [
     'Traumatología' => '#A9B0F4'
 ];
 
+
+
+$profesional = ucwords(strtolower($_SESSION['profesional']));
+
 // Horarios disponibles por profesional en Sante
 if (!isset($_SESSION['horasProfesionales'])) {
     $_SESSION['horasProfesionales'] = [
-        'Lucia Foricher' => [
-            'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Friday' => ['08:00', '09:00', '10:00', '11:00']
+        'Lucia foricher' => [
+            'lunes' => ['08:00', '09:00', '10:00', '11:00'],
+            'miércoles' => ['08:00', '09:00', '10:00', '11:00'],
+            'viernes' => ['08:00', '09:00', '10:00', '11:00'],
         ],
         'Mauro Robert' => [
-            'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-            'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
-            'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-            'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
-            'Friday' => ['13:00', '14:00', '15:00', '16:00']
+            'lunes' => ['13:00', '14:00', '15:00', '16:00'],
+            'martes' => ['13:00', '14:00', '15:00', '16:00'],
+            'miércoles' => ['13:00', '14:00', '15:00', '16:00'],
+            'jueves' => ['13:00', '14:00', '15:00', '16:00'],
+            'viernes' => ['13:00', '14:00', '15:00', '16:00']
         ],
         'German Fernandez' => [
-            'Monday' => ['17:30', '18:30', '19:30'],
-            'Tuesday' => ['17:30', '18:30', '19:30'],
-            'Wednesday' => ['17:30', '18:30', '19:30'],
-            'Thursday' => ['17:30', '18:30', '19:30'],
-            'Friday' => ['17:30', '18:30', '19:30']
+            'lunes' => ['17:30', '18:30', '19:30'],
+            'martes' => ['17:30', '18:30', '19:30'],
+            'miércoles' => ['17:30', '18:30', '19:30'],
+            'jueves' => ['17:30', '18:30', '19:30'],
+            'viernes' => ['17:30', '18:30', '19:30']
         ],
         'Gastón Olgiati' => [
-            'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-            'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-            'Friday' => ['13:00', '14:00', '15:00', '16:00']
+            'lunes' => ['13:00', '14:00', '15:00', '16:00'],
+            'miércoles' => ['13:00', '14:00', '15:00', '16:00'],
+            'viernes' => ['13:00', '14:00', '15:00', '16:00']
         ],
         'Hernán López' => [
-            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+            'martes' => ['08:00', '09:00', '10:00', '11:00'],
+            'jueves' => ['08:00', '09:00', '10:00', '11:00']
         ],
         'Alejandro Perez' => [
-            'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Friday' => ['08:00', '09:00', '10:00', '11:00']
+            'lunes' => ['08:00', '09:00', '10:00', '11:00'],
+            'miércoles' => ['08:00', '09:00', '10:00', '11:00'],
+            'viernes' => ['08:00', '09:00', '10:00', '11:00']
         ],
         'Melina Thome' => [
-            'Monday' => ['17:00', '18:00', '19:00'],
-            'Wednesday' => ['17:00', '18:00', '19:00'],
-            'Friday' => ['17:00', '18:00', '19:00']
+            'lunes' => ['17:00', '18:00', '19:00'],
+            'miércoles' => ['17:00', '18:00', '19:00'],
+            'viernes' => ['17:00', '18:00', '19:00']
         ],
         'Maria Paz' => [
-            'Wednesday' => ['17:00', '18:00', '19:00'],
-            'Saturday' => ['12:00']
+            'miércoles' => ['17:00', '18:00', '19:00'],
+            'sábado' => ['12:00']
         ],
         'Miriam' => [
             'martes' => ['08:00', '09:00', '10:00', '11:00'],
