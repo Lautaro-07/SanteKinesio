@@ -75,6 +75,104 @@ if (isset($_GET['fecha'])) {
     echo json_encode($horasFinales);
     exit();
 }
+
+$imagenes_profesionales = [
+    'Florencia Goñi' => 'img/florencia.jpg',
+    'Constanza Marinello' => 'img/constanza.jpg',     
+    'Maria Paz' => 'img/maria.jpg',
+    'Lucia Foricher' => 'img/lucia.jpg',
+    'Mariana' => 'img/mariana.jpg',
+    'Miriam Rossello' => 'img/miriam.jpg',
+    'Mauro Robert' => 'img/mauro.jpg',
+    'German Fernandez' => 'img/german.jpg',
+    'Gastón Olgiati' => 'img/gastonO.jpg',
+    'Melina Thome' => 'img/melina.jpg',
+    'Hernán López' => 'img/hernan.jpg',
+    'Alejandro Perez' => 'img/alejandro.jpg',
+];
+
+$servicio = isset($_SESSION['servicio']) ? $_SESSION['servicio'] : 'Servicio no definido';
+
+$profesionalesDescripciones = [
+    'Lucia Foricher' => [
+        'nombre' => 'Lucia Foricher Castellon',
+        'imagen' => '../img/lucia.jpg',
+        'descripciones' => [
+            'Licenciada en kinesiología'
+        ]
+    ],
+    'Alejandro Perez' => [
+        'nombre' => 'Alejandro Perez Etchever',
+        'imagen' => '../img/alejandro.jpg',
+        'descripciones' => [
+            'Especialista en kinesiología deportiva y rehabilitación de lesiones.'
+        ]
+    ],
+    'Constanza Marinello' => [
+        'nombre' => 'Constanza Marinello',
+        'imagen' => '../img/constanza.jpg',
+        'descripciones' => [
+            'Licenciada en kinesiología con enfoque en tratamientos posturales y de columna.'
+        ]
+    ],
+    'Florencia Goñi' => [
+        'nombre' => 'Florencia Goñi',
+        'imagen' => '../img/florencia.jpg',
+        'descripciones' => [
+            'Especialista en kinesiología pediátrica y desarrollo motor infantil.'
+        ]
+    ],
+    'Gastón Olgiati' => [
+        'nombre' => 'Gastón Olgiati',
+        'imagen' => '../img/GastonO.jpg',
+        'descripciones' => [
+            'Licenciado en kinesiología con experiencia en rehabilitación neurológica.'
+        ]
+    ],
+    'Maria Paz' => [
+        'nombre' => 'Maria Paz Ruilopez',
+        'imagen' => '../img/maria.jpg',
+        'descripciones' => [
+            'Licenciada en nutrición, especialista en dietas personalizadas y control de peso.'
+        ]
+    ],
+    'Melina Thome' => [
+        'nombre' => 'Melina Thome',
+        'imagen' => '../img/melina.jpg',
+        'descripciones' => [
+            'Kinesióloga con experiencia en rehabilitación deportiva y terapias manuales.'
+        ]
+    ],
+    'Miriam Rossello' => [
+        'nombre' => 'Dra. Miriam Rossello',
+        'imagen' => '../img/miriam.jpg',
+        'descripciones' => [
+            'Especialista en miembro superior con amplia experiencia en cirugía y rehabilitación.'
+        ]
+    ],
+
+    'Mauro Robert' => [
+        'nombre' => 'Dr. Mauro Robert',
+        'imagen' => '../img/mauro.jpg',
+        'descripciones' => [
+            'Especialista en miembro superior con amplia experiencia en cirugía y rehabilitación.'
+        ]
+    ],
+
+    'German Fernandez' => [
+        'nombre' => 'Dr. German Fernandez',
+        'imagen' => '../img/german.jpg',
+        'descripciones' => [
+            'Especialista en miembro superior con experiencia en cirugía y rehabilitación.'
+        ]
+    ]
+
+];
+
+$servicio = isset($_SESSION['servicio']) ? $_SESSION['servicio'] : 'Servicio no definido';
+$descripcion = isset($profesionalesDescripciones[$profesional]['descripciones']) ? implode('<br>', $profesionalesDescripciones[$profesional]['descripciones']) : 'Descripción no disponible';
+
+
 ?>
 
 <!DOCTYPE html>
@@ -98,17 +196,21 @@ if (isset($_GET['fecha'])) {
     <link rel="icon" href="img/santeLogo.jpg">
 
     <style>
-        .fecha {
-            position: relative;
-            top: 80px;
+        body{
+            background-color: rgb(246, 241, 238) !important;
         }
-        
+
         .calendar-container {
-            max-width: 400px;
-            margin: 0px auto;
+            width: 00px;
+            margin:  auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             position: relative;
-            top: 50px;
+            top: 20px;
+
         }
+
         .flatpickr-calendar {
             font-size: 16px;
             padding: 10px;
@@ -139,7 +241,7 @@ if (isset($_GET['fecha'])) {
             cursor: not-allowed;
         }
         .time-slot.available:hover {
-            background-color: #8A2BE2;
+            background-color: #9DBC98;
             color: white;
         }
         #modal-content {
@@ -153,14 +255,15 @@ if (isset($_GET['fecha'])) {
         }
         #confirmarTurno {
             display: none;
-            background-color: #8A2BE2;
+            background-color: #9DBC98;
             color: white;
             padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             position: relative;
-            bottom: 15px;
+            top: 10px;
+            margin: auto;
         }
         #closeModal {
             background-color: red;
@@ -183,7 +286,127 @@ if (isset($_GET['fecha'])) {
             font-weight: 700;
             position: relative;
             top: 30px;
+            background-color: #fff;
+            max-width: 600px ;
+            padding: 10px;
+            border: 2px solid #9DBC98;
+            border-radius: 50px;
         }
+
+        .profesionalesIMG{
+            width: 200px;
+            height: 85vh;
+            background-color: rgba(99, 136, 137, 1);
+            position: absolute;
+            top: 10;
+            left: 0 ;
+            border-radius: 16px;
+        }
+
+        .profesional_img {
+            width: 200px;
+            height: 300px;
+            border-radius: 0%;
+            overflow: hidden;
+            margin-bottom: 10px;
+            margin: auto;
+            position: relative;
+            top: 40px;
+            padding: 10px;
+        }
+
+        .profesional_img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profesional-info h2 {
+            font-size: 25px;
+            text-align: center;
+            margin-top: 5px;
+            color: white;
+            position: relative;
+            top: 50px;
+            font-weight: 600;
+        }
+
+        .profesional-info p {
+            font-size: 20px;
+            text-align: center;
+            margin-top: 5px;
+            color: #ccc;
+            position: relative;
+            top: 70px;
+        }
+
+
+        @media (max-width: 768px) {
+    .calendar-container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .profesionalesIMG {
+        width: 90%;
+        height: 300px;
+        position: relative;
+        border-radius: 10px;
+        margin: auto;
+        top: 10px;
+    }
+
+    .profesional_img {
+        width: 180px;
+        height: 180px;
+        position: relative;
+        bottom: 0px;
+    }
+
+    .profesional_img img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 100%;
+        position: relative;
+        bottom: 0px;
+    }
+
+    .profesional-info h2,
+    .profesional-info p {
+        text-align: center;
+        font-size: 18px;
+        position: relative;
+        top: 40px;
+    }
+
+    .servicio_title {
+        max-width: 100%;
+        font-size: 20px;
+        letter-spacing: 4px;
+        padding: 8px;
+    }
+
+    .time-card {
+        width: 100%;
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #modal-content {
+        width: 90%;
+        max-width: 350px;
+    }
+
+    #confirmarTurno {
+        width: 100%;
+        padding: 12px;
+        position: relative;
+        top: 0;
+    }
+}
+       
     </style>
 </head>
 <body>
@@ -194,10 +417,21 @@ if (isset($_GET['fecha'])) {
             </div>
         </nav>
     </header>
-    <div class="color"></div>
 
-    <h1 class="servicio_title">NUESTRO HORARIO</h1>
-    <hr style="position: relative; top: 40px; width: 60%; margin: auto;">
+    <div class="container-profesional">
+       <div class="profesionalesIMG">
+       <div class="profesional-info">
+            <div class="profesional_img">
+            <img src="<?= $imagenes_profesionales[$profesional] ?>" alt="<?= $profesional ?>">
+            </div>
+            <h2><?= $profesionalesDescripciones[$profesional]['nombre'] ?></h2>
+            <p><?php echo $descripcion; ?></p>
+        </div>
+    </div>
+
+    <h1 class="servicio_title"><?= $servicio ?></h1>
+
+    <section>
     <div class="calendar-container">
         <form action="fecha.php" method="POST" class="fecha_container" id="fechaForm">
             <input type="text" id="fecha" class="fecha" name="fecha" placeholder="Selecciona la fecha" required><br><br>
@@ -205,7 +439,7 @@ if (isset($_GET['fecha'])) {
             <button type="submit" id="confirmarTurno" style="display:none;">Confirmar Fecha y Hora</button>
         </form>
     </div>
-
+    </section>
     <!-- Modal de selección de hora -->
     <div id="horaModal" class="time-card">
         <div id="modal-content">
