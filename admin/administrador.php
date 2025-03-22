@@ -4,64 +4,51 @@ session_start([
 ]);
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: index.php');
+    header('Location: ../index.php');
     exit();
 }
 
-// Conexión a la base de datos
+// Obtener lista de servicios
 $conn = new mysqli('localhost', 'root', '', 'sante');
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+$servicios_result = $conn->query("SELECT servicio, precio FROM precio_servicios");
+$servicios = [];
+while ($row = $servicios_result->fetch_assoc()) {
+    $servicios[] = $row;
 }
-
-// Obtener la lista de profesionales
-$sql_profesionales = "SELECT DISTINCT profesional FROM turnos";
-$result_profesionales = $conn->query($sql_profesionales);
+$conn->close();
 
 // Variables para búsqueda
 $busqueda_nombre = isset($_GET['nombre']) ? $_GET['nombre'] : '';
-$busqueda_obra_social = isset($_GET['obra_social']) ? $_GET['obra_social'] : '';
-$profesional_seleccionado = isset($_GET['profesional']) ? $_GET['profesional'] : '';
-$dia_semana = isset($_GET['dia_semana']) ? $_GET['dia_semana'] : ''; // Nueva variable para el día de la semana
+$busqueda_profesional = isset($_GET['busqueda_profesional']) ? $_GET['busqueda_profesional'] : '';
 
 // Inicializar la consulta para obtener pacientes
+$conn = new mysqli('localhost', 'root', '', 'sante'); // Definir la conexión a la base de datos
 $sql = "SELECT * FROM turnos WHERE 1=1";
-$conditions = []; // Array para almacenar las condiciones de búsqueda
 $params = [];
 $param_types = '';
 
-// Agregar filtros de búsqueda por nombre, obra social, día de la semana y profesional
+// Agregar filtros de búsqueda por nombre y profesional
 if ($busqueda_nombre != '') {
-    $conditions[] = "nombre LIKE ?";
+    $sql .= " AND nombre LIKE ?";
     $params[] = "%$busqueda_nombre%";
     $param_types .= 's';
 }
 
-if ($busqueda_obra_social != '') {
-    $conditions[] = "obra_social LIKE ?";
-    $params[] = "%$busqueda_obra_social%";
+if ($busqueda_profesional != '') {
+    $sql .= " AND profesional = ?";
+    $params[] = $busqueda_profesional;
     $param_types .= 's';
 }
 
-if ($dia_semana != '') {
-    $conditions[] = "DAYOFWEEK(fecha) = ?";
-    $params[] = $dia_semana;
-    $param_types .= 'i';
-}
+// Filtrar por el mes actual
+$sql .= " AND MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())";
 
-if ($profesional_seleccionado != '') {
-    $conditions[] = "profesional = ?";
-    $params[] = $profesional_seleccionado;
-    $param_types .= 's';
-}
-
-// Si hay condiciones, agregarlas a la consulta
-if (count($conditions) > 0) {
-    $sql .= " AND " . implode(" AND ", $conditions);
-}
-
+$sql .= " ORDER BY fecha";
 $stmt = $conn->prepare($sql);
-if (!empty($param_types)) {
+if (!$stmt) {
+    die("Error al preparar la consulta: " . $conn->error);
+}
+if (!empty($params)) {
     $stmt->bind_param($param_types, ...$params);
 }
 $stmt->execute();
@@ -73,89 +60,142 @@ if ($pacientes === false) {
     exit();
 }
 
-// Eliminar paciente si se recibe el ID
-if (isset($_GET['eliminar_id'])) {
-    $eliminar_id = $_GET['eliminar_id'];
-    $sql_delete = "DELETE FROM turnos WHERE id = ?";
-
-    if ($stmt = $conn->prepare($sql_delete)) {
-        $stmt->bind_param('i', $eliminar_id);
-        if ($stmt->execute()) {
-            echo "<script>alert('Paciente eliminado correctamente.'); window.location.href = 'administrador.php';</script>";
-        } else {
-            echo "Error al eliminar el paciente.";
-        }
-    } else {
-        echo "Error al preparar la consulta de eliminación.";
-    }
-    exit();
+// Obtener lista de profesionales
+$profesionales_result = $conn->query("SELECT DISTINCT profesional FROM turnos");
+$profesionales = [];
+while ($row = $profesionales_result->fetch_assoc()) {
+    $profesionales[] = $row['profesional'];
 }
 
-// Actualizar paciente si se recibe el ID, nueva obra social, nueva fecha, nueva hora y nuevo número de sesión
-if (isset($_POST['editar_id'])) {
-    $editar_id = $_POST['editar_id'];
-    $nueva_obra_social = $_POST['nueva_obra_social'];
-    $nueva_fecha = $_POST['nueva_fecha'];
-    $nueva_hora = $_POST['nueva_hora'];
-    $nuevo_numero_sesion = $_POST['nuevo_numero_sesion'];
-    $sql_update = "UPDATE turnos SET obra_social = ?, fecha = ?, hora = ?, numero_sesion = ? WHERE id = ?";
+// Mapear días de la semana
+$dias_semana = [
+    1 => 'Monday',
+    2 => 'Tuesday',
+    3 => 'Wednesday',
+    4 => 'Thursday',
+    5 => 'Friday'
+];
 
-    if ($stmt = $conn->prepare($sql_update)) {
-        $stmt->bind_param('sssii', $nueva_obra_social, $nueva_fecha, $nueva_hora, $nuevo_numero_sesion, $editar_id);
-        if ($stmt->execute()) {
-            echo "<script>alert('Datos actualizados correctamente.'); window.location.href = 'administrador.php';</script>";
-        } else {
-            echo "Error al actualizar los datos.";
-        }
-    } else {
-        echo "Error al preparar la consulta de actualización.";
+$dias_semana_espanol = [
+    'Monday' => 'Lunes',
+    'Tuesday' => 'Martes',
+    'Wednesday' => 'Miércoles',
+    'Thursday' => 'Jueves',
+    'Friday' => 'Viernes'
+];
+
+// Agrupar pacientes por día de la semana
+$pacientes_por_dia = [];
+$pacientes_por_hora = [];
+while ($row = $pacientes->fetch_assoc()) {
+    $dia_semana = date('N', strtotime($row['fecha'])); // 1 (para lunes) a 7 (para domingo)
+    $hora = date('H:i', strtotime($row['hora']));
+    if (!isset($pacientes_por_dia[$dia_semana])) {
+        $pacientes_por_dia[$dia_semana] = [];
     }
-    exit();
+    if (!isset($pacientes_por_hora[$dia_semana])) {
+        $pacientes_por_hora[$dia_semana] = [];
+    }
+    $pacientes_por_dia[$dia_semana][] = $row;
+    if (!isset($pacientes_por_hora[$dia_semana][$hora])) {
+        $pacientes_por_hora[$dia_semana][$hora] = [];
+    }
+    $pacientes_por_hora[$dia_semana][$hora][] = $row;
 }
 
-if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
-    $nota_id = $_POST['nota_id'];
-    $nuevo_comentario = $_POST['nuevo_comentario'];
+// Obtener disponibilidad de horarios y filtrar los horarios ocupados por los pacientes
+$disponibilidadProfesionales = [
+    'Lucia Foricher' => [
+        'Monday' => ['08:00', '09:00', '10:00', '11:00'],
+        'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
+        'Friday' => ['08:00', '09:00', '10:00', '11:00'],
+    ],
+    'Mauro Robert' => [
+        'Monday' => ['13:00', '14:00', '15:00', '16:00'],
+        'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
+        'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
+        'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
+        'Friday' => ['13:00', '14:00', '15:00', '16:00']
+    ],
+    'German Fernandez' => [
+        'Monday' => ['17:30', '18:30', '19:30'],
+        'Tuesday' => ['17:30', '18:30', '19:30'],
+        'Wednesday' => ['17:30', '18:30', '19:30'],
+        'Thursday' => ['17:30', '18:30', '19:30'],
+        'Friday' => ['17:30', '18:30', '19:30']
+    ],
+    'Gastón Olgiati' => [
+        'Monday' => ['13:00', '14:00', '15:00', '16:00'],
+        'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
+        'Friday' => ['13:00', '14:00', '15:00', '16:00']
+    ],
+    'Hernán López' => [
+        'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
+        'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+    ],
+    'Alejandro Perez' => [
+        'Monday' => ['08:00', '09:00', '10:00', '11:00'],
+        'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
+        'Friday' => ['08:00', '09:00', '10:00', '11:00']
+    ],
+    'Melina Thome' => [
+        'Monday' => ['17:00', '18:00', '19:00'],
+        'Wednesday' => ['17:00', '18:00', '19:00'],
+        'Friday' => ['17:00', '18:00', '19:00']
+    ],
+    'Maria Paz' => [
+        'Wednesday' => ['17:00', '18:00', '19:00'],
+        'Saturday' => ['12:00']
+    ],
+    'Miriam' => [
+        'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
+        'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+    ],
+    'Florencia' => [
+        'Monday' => ['17:00', '18:00'],
+        'Tuesday' => ['17:00', '18:00'],
+        'Thursday' => ['17:00']
+    ],
+    'Constanza' => [
+        'Monday' => ['15:00'],
+        'Tuesday' => ['16:00', '17:00'],
+        'Thursday' => ['13:00', '14:00', '15:00'],
+        'Friday' => ['15:00', '16:00']
+    ],
+    'Mariana' => [
+        'Thursday' => ['09:30', '10:30'],
+        'Friday' => ['08:30', '09:30', '10:30']
+    ]
+];
 
-    $sql_update = "UPDATE turnos SET comentarios = ? WHERE id = ?";
-    if ($stmt = $conn->prepare($sql_update)) {
-        $stmt->bind_param('si', $nuevo_comentario, $nota_id);
-        if ($stmt->execute()) {
-            echo "<script>alert('Comentario actualizado correctamente.'); window.location.href = 'administrador.php';</script>";
-        } else {
-            echo "Error al actualizar el comentario.";
+// Filtrar los horarios ocupados por los pacientes y aplicar la lógica para kinesiología
+$horarios_ocupados = [];
+if ($busqueda_profesional != '' && isset($disponibilidadProfesionales[$busqueda_profesional])) {
+    foreach ($disponibilidadProfesionales[$busqueda_profesional] as $dia => &$horarios) {
+        foreach ($horarios as $key => $hora) {
+            $dia_num = array_search($dia, array_keys($dias_semana)) + 1;
+            if (isset($pacientes_por_hora[$dia_num][$hora])) {
+                $horarios_ocupados[$dia][$hora] = true;
+                unset($horarios[$key]);
+            }
         }
-    } else {
-        echo "Error al preparar la consulta.";
     }
-    exit();
-}
+};
 
-// Actualizar asistencia de paciente
-if (isset($_POST['asistencia_id'])) {
-    $asistencia_id = $_POST['asistencia_id'];
-    $asistio = isset($_POST['asistio']) ? 1 : 0;
+$colores_servicio = [
+    'Kinesiología' => '#E2C6C2',
+    'Terapia manual' => '#A6DA9C',
+    'Drenaje Linfático' => '#BBFFFF',
+    'Nutrición' => '#EE976A',
+    'Traumatología' => '#A9B0F4'
+];
 
-    $sql_asistencia = "UPDATE turnos SET asistio = ? WHERE id = ?";
-    if ($stmt = $conn->prepare($sql_asistencia)) {
-        $stmt->bind_param('ii', $asistio, $asistencia_id);
-        if ($stmt->execute()) {
-            echo "<script>alert('Asistencia actualizada correctamente.'); window.location.href = 'administrador.php';</script>";
-        } else {
-            echo "Error al actualizar la asistencia.";
-        }
-    } else {
-        echo "Error al preparar la consulta de asistencia.";
-    }
-    exit();
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../bootstrap-5.1.3-dist/css/bootstrap.css">
     <script src="../bootstrap-5.1.3-dist/js/bootstrap.bundle.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -165,53 +205,21 @@ if (isset($_POST['asistencia_id'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
     <link rel="icon" href="../img/santeLogo.jpg">
-    <title>Kaizen - Administración de Pacientes</title>
-    <script>
-        function notaFormulario(id, comentarioActual) {
-            document.getElementById('nota_id').value = id; // ID del comentario
-            document.getElementById('nuevo_comentario').value = comentarioActual; // Carga el comentario actual
-            document.getElementById('formularioNotas').style.display = 'block'; // Muestra el formulario
-        }
-
-        function cerrarNotaFormulario() {
-            document.getElementById('formularioNotas').style.display = 'none'; // Oculta el formulario
-        }
-    </script>
+    <title>Sante - Pacientes</title>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #ffffff;
             color: #333;
             line-height: 1.6;
             box-sizing: border-box;
         }
 
         h1, h2 {
-            color: #96B394;
+            color:#96B394;
             text-align: center;
         }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-            transition: color 0.3s ease;
-        }
-
-        a:hover {
-            color: #96B394;
-        }
-
-        button {
-            cursor: pointer;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        /* Header */
 
         .content {
             padding: 20px;
@@ -220,344 +228,309 @@ if (isset($_POST['asistencia_id'])) {
             max-width: 1200px;
         }
 
-        form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
         }
 
-        form input, form select {
-            flex: 1;
-            min-width: 150px;
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        form button {
-            background-color: #96B394;
-            color: #fff;
-        }
-
-        /* Table Styles */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
             background-color: #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         th, td {
-            text-align: left;
+            text-align: center;
             padding: 10px;
             border: 1px solid #ddd;
+            vertical-align: top; /* Asegura que el contenido se muestre en la parte superior */
         }
 
         th {
-            background-color: #96B394;
-            color: #fff;
+            background-color: #F6EBD5;
+            color:rgb(31, 31, 31);
         }
 
-        td {
+        .patient-card {
             background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px auto;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+            min-width: 110px;
+        }
+        .patient-card.yellow {
+            background-color: yellow;
+        }
+
+        .patient-card:hover {
+            background-color: #e0e0e0;
         }
 
         .highlight {
             background-color: yellow;
         }
 
-        /* Estilo para el botón de eliminar */
-        .delete-btn {
-            background-color: #e63946;
-            color: #fff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            position: relative;
-            bottom: 5px;
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
         }
 
-        .btn_diagnostico {
-            background-color: rgb(21, 85, 168);
-            color: #fff;
-            border: none;
-            padding: 8px 11px;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            position: relative;
-            top: 5px;
+        .button-container form {
+            flex-grow: 1;
+            text-align: center;
         }
 
-        .delete-btn:hover {
-            color: #fff !important;
-            text-decoration: none;
-            background-color: #b71c1c;
-        }
-
-        /* Estilo para el botón de editar */
-        .edit-btn {
+        .button-container button {
             background-color: #96B394;
-            color: #fff;
+            color: white;
             border: none;
-            padding: 5px 2px;
+            padding: 10px 20px;
             border-radius: 5px;
-            font-size: 14px;
             cursor: pointer;
-            width: 75px;
-            transition: background-color 0.3s ease;
-            margin-top: 2px;
+            margin: 5px;
         }
 
-        .edit-btn:hover {
-            background-color: rgb(94, 117, 92);
+        .button-container button:hover {
+            background-color: #96B394;
         }
 
-        .nota-btn {
-            background-color: rgb(47, 175, 122);
-            color: #fff;
+        .navbar-collapse {
+            justify-content: flex-end; /* Asegura que los enlaces se alineen a la derecha */
+        }
+
+        .navbar-nav {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn_horarios {
+            background-color: #96B394;
+            color: white;
             border: none;
-            padding: 5px 2px;
-            border-radius: 5px;
-            font-size: 14px;
+            padding: 8px;
             cursor: pointer;
-            width: 75px;
-            transition: background-color 0.3s ease;
-            margin-top: 2px;
+            border-radius: 10px !important;
         }
 
-        .nota-btn:hover {
-            background-color: rgb(80, 133, 76);
+        .btn_horarios:hover {
+            background-color: rgb(113, 139, 111);
         }
 
-        #formularioEdicion {
-            display: none;
-            position: fixed;
-            top: 20%;
-            left: 50%;
-            transform: translate(-50%, -20%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            max-width: 400px;
-            width: 90%;
-        }
+        /* Asegurar que el navbar siempre se muestre en pantallas grandes */
+        @media (max-width: 992px) {
+            .ul_container {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                align-items: flex-start; /* Alinea los elementos a la derecha */
+                margin-top: 10px; /* Agrega un pequeño espacio debajo del navbar */
+            }
 
-        #formularioEdicion form input {
-            width: calc(100% - 20px);
-            margin-bottom: 10px;
-        }
-
-        #formularioEdicion button {
-            width: 48%;
-            margin: 5px 1%;
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
+            .btn_horarios {
+                position: relative; 
+                background-color: #F6EBD5;
+                width: 200px;
+                padding: 8px;
+                border-radius: 10px !important;
+                color: #fff !important;
                 text-align: center;
             }
 
-            form {
-                flex-direction: column;
+            .agendar_link {
+                position: relative; 
+                background-color: #F6EBD5;
+                width: 200px;
+                padding: 8px;
+                border-radius: 10px !important;
+                color: #fff !important;
+                text-align: center;
             }
-
-            form input, form select, form button {
-                width: 100%;
-            }
-
-            table {
-                font-size: 14px;
-                overflow-x: auto;
-                display: block;
-                max-width: 100%;
-                white-space: nowrap;
-            }
-
-            table th, table td {
-                white-space: nowrap;
-            }
-        }
-
-        .asistencia_contianer {
-            width: 0;
-            font-size: 20px;
-            background-color: #333;
-            text-align: center;
-            position: relative;
-            right: 35px;
         }
     </style>
+    <script>
+        function mostrarPrecioServicio() {
+            var select = document.getElementById("servicio");
+            var option = select.options[select.selectedIndex];
+            var precio = option.getAttribute("data-precio");
+            document.getElementById("precio_actual").value = precio;
+        }
+
+        function fetchPacientes(profesional) {
+            var rows = document.querySelectorAll('.patient-card');
+            rows.forEach(function(row) {
+                if (profesional === "" || row.getAttribute('data-profesional') === profesional) {
+                    row.style.display = 'inline-block';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            var horarios = document.querySelectorAll('.horarios-disponibles div, .horarios-ocupados div');
+            horarios.forEach(function(div) {
+                if (profesional === "" || div.getAttribute('data-profesional') === profesional) {
+                    div.style.display = 'block';
+                } else {
+                    div.style.display = 'none';
+                }
+            });
+            
+            // Actualizar el encabezado de horarios disponibles
+            var header = document.getElementById('horarios-header');
+            if (profesional === "") {
+                header.innerText = "Horarios Disponibles";
+            } else {
+                header.innerText = "Horarios de " + profesional;
+            }
+        }
+    </script>
 </head>
 <body>
 
-    <!-- Navegador lateral -->
-    <header>
-        <nav class="nav_container navbar-expand-lg navbar navbar-dark">
-            <div class="container-fluid">
-                <div class="logo_container">
-                    <img class="logo" src="../img/santeLogo.jpg" alt="Logo">
-                </div>
-                <div class="" id="navbarNavAltMarkup">
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <a class="nav_link nav-link" href="../index.php">Agendar Paciente</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="color"></div>
+<header>
+<nav class="nav_container navbar navbar-dark navbar-expand-lg">
+    <div class="container-fluid">
+        <div class="logo_container">
+            <img class="logo" src="../img/santeLogo.jpg" alt="Logo">
+        </div>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" 
+            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <ul class="ul_container navbar-nav ms-auto"> <!-- ms-auto empuja los elementos a la derecha -->
+                <li class="nav-item">
+                    <a class="btn_horarios nav_link nav-link" style="color: #fff;" href="../index.php">Agendar Paciente</a>
+                </li>
+                <li class="nav-item">
+                    <button class="btn_horarios" onclick="document.getElementById('modificar-precio').style.display='block'">Modificar Precio</button>                    
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+</header>
 
-    <!-- Contenido principal -->
-    <div class="content">
-        <h1 style="font-weight: 600; letter-spacing: 10px;">Bienvenido</h1>
-        <hr>
-        <!-- Formulario para seleccionar profesional, nombre, obra social y día de la semana -->
-        <form method="GET" action="administrador.php">
-            <select name="profesional" id="profesional">
-                <option value="">Seleccionar Profesional</option>
-                <?php while ($row_profesional = $result_profesionales->fetch_assoc()): ?>
-                    <option value="<?php echo $row_profesional['profesional']; ?>" <?php echo $profesional_seleccionado == $row_profesional['profesional'] ? 'selected' : ''; ?>><?php echo $row_profesional['profesional']; ?></option>
-                <?php endwhile; ?>
-            </select>
-            <input type="text" name="nombre" value="<?php echo $busqueda_nombre; ?>" placeholder="Buscar por Nombre">
-            <input type="text" name="obra_social" value="<?php echo $busqueda_obra_social; ?>" placeholder="Buscar por Obra Social">
+<div class="content" style="color: #000 !important;">
+    <h1 style="font-weight: 600; letter-spacing: 10px;">Bienvenido</h1>
+    <hr>
+    
+    <form method="GET" action="administrador.php">
+        <input type="text" id="nombre" name="nombre" placeholder="Buscar por nombre" value="<?php echo $busqueda_nombre; ?>">
+        <select id="busqueda_profesional" name="busqueda_profesional" onchange="fetchPacientes(this.value)">
+            <option value="">-- Todos los Profesionales --</option>
+            <?php foreach ($profesionales as $prof): ?>
+                <option value="<?php echo $prof; ?>" <?php if ($busqueda_profesional == $prof) echo 'selected'; ?>>
+                    <?php echo $prof; ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button class="btn_horarios" type="submit">Buscar</button>
+    </form>
 
-            <!-- Nueva opción para seleccionar el día de la semana -->
-            <select name="dia_semana" id="dia_semana">
-                <option value="">Seleccionar Día</option>
-                <option value="1" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '1' ? 'selected' : ''; ?>>Domingo</option>
-                <option value="2" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '2' ? 'selected' : ''; ?>>Lunes</option>
-                <option value="3" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '3' ? 'selected' : ''; ?>>Martes</option>
-                <option value="4" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '4' ? 'selected' : ''; ?>>Miércoles</option>
-                <option value="5" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '5' ? 'selected' : ''; ?>>Jueves</option>
-                <option value="6" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '6' ? 'selected' : ''; ?>>Viernes</option>
-                <option value="7" <?php echo isset($_GET['dia_semana']) && $_GET['dia_semana'] == '7' ? 'selected' : ''; ?>>Sábado</option>
-            </select>
+    <div class="table-container" id="pacientes-table">
+        <table>
+            <thead>
+                <tr>
+                    <th id="horarios-header">Horarios Disponibles</th>
+                    <th>Horarios Ocupados</th>
+                    <th>Lunes</th>
+                    <th>Martes</th>
+                    <th>Miércoles</th>
+                    <th>Jueves</th>
+                    <th>Viernes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="horarios-disponibles">
+                        <?php if (isset($disponibilidadProfesionales[$busqueda_profesional])): ?>
+                            <?php foreach ($disponibilidadProfesionales[$busqueda_profesional] as $dia => $horarios): ?>
+                                <div data-profesional="<?php echo $busqueda_profesional; ?>">
+                                    <strong><?php echo $dias_semana_espanol[$dia]; ?></strong>
+                                    <ul>
+                                        <?php foreach ($horarios as $horario): ?>
+                                            <?php
+                                            $dia_num = array_search($dia, array_keys($dias_semana)) + 1;
+                                            $hora_ocupada = false;
 
-            <button type="submit">Buscar</button>
-        </form>
-
-        <!-- Mostrar resultados -->
-        <?php if (isset($pacientes) && $pacientes->num_rows > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Teléfono</th>
-                        <th>Correo</th>
-                        <th>Obra Social</th>
-                        <th>Servicio</th>
-                        <th>Profesional</th>
-                        <th>Fecha</th>
-                        <th>Hora</th>
-                        <th>Número de Sesión</th>
-                        <th>Notas</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($row = $pacientes->fetch_assoc()): ?>
-                        <tr>
-                            <td><?php echo $row['nombre']; ?></td>
-                            <td><?php echo $row['telefono']; ?></td>
-                            <td><?php echo $row['gmail']; ?></td>
-                            <td><?php echo $row['obra_social']; ?></td>
-                            <td><?php echo $row['servicio']; ?></td>
-                            <td><?php echo $row['profesional']; ?></td>
-                            <td><?php echo $row['fecha']; ?></td>
-                            <td><?php echo $row['hora']; ?></td>
-                            <td class="<?php echo $row['numero_sesion'] == 1 ? 'highlight' : ''; ?>"><?php echo $row['numero_sesion']; ?></td>
-                            <td><?php echo $row['comentarios']; ?></td>
-                            <td>
-                                <form method="POST" class="asistencia_contianer" action="administrador.php">
-                                    <input type="hidden" name="asistencia_id" value="<?php echo $row['id']; ?>">
-                                    <input type="checkbox" name="asistio" <?php echo $row['asistio'] ? 'checked' : ''; ?> onchange="this.form.submit()">
-                                </form>
-                                <a href="?eliminar_id=<?php echo $row['id']; ?>" class="delete-btn" onclick="return confirm('¿Estás seguro de que quieres eliminar este paciente?');">Eliminar</a>
-                                <br>
-                                <button class="edit-btn" onclick="abrirFormulario(<?php echo $row['id']; ?>, '<?php echo $row['obra_social']; ?>', '<?php echo $row['fecha']; ?>', '<?php echo $row['hora']; ?>', '<?php echo $row['numero_sesion']; ?>')">Editar</button>
-                                <br>
-                                <button class="nota-btn" onclick="notaFormulario('<?php echo $row['id']; ?>', '<?php echo addslashes(str_replace(array("\r\n", "\n", "\r"), '', $row['comentarios'])); ?>')">Editar nota</button>
-                                <br>
-                                <a href="diagnostico.php?id=<?php echo $row['id']; ?>" class="btn_diagnostico ">Paciente</a>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>No se encontraron pacientes con los criterios de búsqueda.</p>
-        <?php endif; ?>
+                                            // Verificar si el horario está ocupado
+                                            if (isset($pacientes_por_hora[$dia_num][$horario])) {
+                                                $hora_ocupada = true;
+                                            }
+                                            ?>
+                                            <?php if (!$hora_ocupada): ?>
+                                                <li><?php echo $horario; ?></li>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p>Seleccione un profesional para ver los horarios disponibles.</p>
+                        <?php endif; ?>
+                    </td>
+                    <td class="horarios-ocupados">
+                        <?php if (isset($pacientes_por_hora)): ?>
+                            <?php foreach ($pacientes_por_hora as $dia_num => $horas): ?>
+                                <div data-profesional="<?php echo $busqueda_profesional; ?>">
+                                    <strong><?php echo $dias_semana_espanol[$dias_semana[$dia_num]]; ?></strong>
+                                    <ul>
+                                        <?php foreach ($horas as $hora => $pacientes): ?>
+                                            <li><?php echo $hora; ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p>No hay horarios ocupados.</p>
+                        <?php endif; ?>
+                    </td>
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                        <td>
+                            <?php if (isset($pacientes_por_dia[$i])): ?>
+                                <?php foreach ($pacientes_por_dia[$i] as $paciente): ?>
+                                    <div class="patient-card" style="background-color: <?php echo $colores_servicio[$paciente['servicio']] ?? '#FFFFFF'; ?>;" onclick="location.href='diagnostico.php?id=<?php echo $paciente['id']; ?>'">
+                                        <p><strong><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
+                                        <p><?php echo htmlspecialchars($paciente['fecha']); ?></p>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p>No hay pacientes programados.</p>
+                            <?php endif; ?>
+                        </td>
+                    <?php endfor; ?>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <div id="formularioNotas" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); background-color:white; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-        <h2>Crear Comentario</h2>
+    <div id="modificar-precio" style="display:none" class="button-container">
         <form method="POST" action="administrador.php">
-            <input type="hidden" name="nota_id" id="nota_id">
-            <label for="nuevo_comentario">Comentario:</label>
-            <textarea name="nuevo_comentario" id="nuevo_comentario" rows="4" style="width:100%; resize: none !important;"></textarea>
-            <br><br>
-            <button type="submit">Guardar</button>
-            <button type="button" onclick="cerrarNotaFormulario()">Cancelar</button>
+            <label for="servicio">Seleccione el servicio:</label>
+            <select name="servicio" id="servicio" required onchange="mostrarPrecioServicio()">
+                <?php foreach ($servicios as $servicio): ?>
+                    <option value="<?php echo $servicio['servicio']; ?>" data-precio="<?php echo $servicio['precio']; ?>">
+                        <?php echo $servicio['servicio']; ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <label for="precio_actual">Precio actual:</label>
+            <input type="text" id="precio_actual" readonly>
+            <label for="nuevo_precio">Nuevo precio:</label>
+            <input type="number" name="nuevo_precio" id="nuevo_precio" required>
+            <button type="submit" name="modificar_precio">Modificar Precio</button>
         </form>
     </div>
-
-    <!-- Formulario modal para editar datos -->
-    <div id="formularioEdicion" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); background-color:white; padding:20px; border:1px solid #ddd; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-        <h2>Editar Paciente</h2>
-        <form method="POST" action="administrador.php">
-            <input type="hidden" name="editar_id" id="editar_id">
-            <label for="nueva_obra_social">Nueva Obra Social:</label>
-            <input type="text" name="nueva_obra_social" id="nueva_obra_social">
-            <br>
-            <label for="nueva_fecha">Nueva Fecha:</label>
-            <input type="date" name="nueva_fecha" id="nueva_fecha">
-            <br>
-            <label for="nueva_hora">Nueva Hora:</label>
-            <input type="time" name="nueva_hora" id="nueva_hora">
-            <br>
-            <label for="nuevo_numero_sesion">Nuevo Número de Sesión:</label>
-            <input type="number" name="nuevo_numero_sesion" id="nuevo_numero_sesion">
-            <br><br>
-            <button type="submit">Guardar</button>
-            <button type="button" onclick="cerrarFormulario()">Cancelar</button>
-        </form>
-    </div>
-
-    <script>
-        function abrirFormulario(id, obraSocial, fecha, hora, numeroSesion) {
-            document.getElementById('editar_id').value = id;
-            document.getElementById('nueva_obra_social').value = obraSocial;
-            document.getElementById('nueva_fecha').value = fecha;
-            document.getElementById('nueva_hora').value = hora;
-            document.getElementById('nuevo_numero_sesion').value = numeroSesion;
-            document.getElementById('formularioEdicion').style.display = 'block';
-        }
-
-        function cerrarFormulario() {
-            document.getElementById('formularioEdicion').style.display = 'none';
-        }
-    </script>
+</div>
 
 </body>
-
 </html>
-
-<?php $conn->close(); ?>
