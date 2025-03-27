@@ -25,6 +25,8 @@ if ($stmt === false) {
     die("Error al preparar la consulta: " . $conn->error);
 }
 
+$error_message = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Contar cuántas veces el nombre, el teléfono, el servicio y el profesional han sido registrados
     $nombre = $_POST['nombre'];
@@ -32,38 +34,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $gmail = $_POST['gmail'];
     $servicio = $_SESSION['servicio'];
     $profesional = $_SESSION['profesional'];
+    $fecha = $_SESSION['fecha'];
+    $hora = $_SESSION['hora'];
+    $obra_social = $_POST['obra_social'];
     
-    $count_query = $conn->prepare("SELECT COUNT(*) AS count FROM turnos WHERE nombre = ? AND telefono = ? AND servicio = ? AND profesional = ?");
-    $count_query->bind_param("ssss", $nombre, $telefono, $servicio, $profesional);
-    $count_query->execute();
-    $count_result = $count_query->get_result();
-    $count_row = $count_result->fetch_assoc();
+    // Verificar si ya existe un registro con los mismos datos
+    $duplicate_query = $conn->prepare("SELECT COUNT(*) AS count FROM turnos WHERE nombre = ? AND telefono = ? AND profesional = ? AND fecha = ? AND hora = ?");
+    $duplicate_query->bind_param("sssss", $nombre, $telefono, $profesional, $fecha, $hora);
+    $duplicate_query->execute();
+    $duplicate_result = $duplicate_query->get_result();
+    $duplicate_row = $duplicate_result->fetch_assoc();
     
-    $numero_sesion = $count_row['count'] + 1; // Incrementar el contador para el nuevo registro
-    
-    $stmt->bind_param(
-        "sssssssss",
-        $servicio,
-        $profesional,
-        $_SESSION['fecha'],
-        $_SESSION['hora'],
-        $nombre,
-        $telefono,
-        $gmail,
-        $_POST['obra_social'],
-        $numero_sesion
-    );
-
-    if ($stmt->execute()) {
-        // Guardar el teléfono y gmail en la sesión para usarlo en la confirmación
-        $_SESSION['telefono'] = $telefono;
-        $_SESSION['gmail'] = $gmail;
-
-        // Redirigir a la página de confirmación con los detalles del turno
-        header('Location: confirmacion.php');
-        exit();
+    if ($duplicate_row['count'] > 0) {
+        $error_message = 'No puedes registrarte dos veces en el mismo horario.';
     } else {
-        echo "Error al registrar el turno: " . $stmt->error;
+        // Contar cuántas veces el nombre, el teléfono, el servicio y el profesional han sido registrados
+        $count_query = $conn->prepare("SELECT COUNT(*) AS count FROM turnos WHERE nombre = ? AND telefono = ? AND servicio = ? AND profesional = ?");
+        $count_query->bind_param("ssss", $nombre, $telefono, $servicio, $profesional);
+        $count_query->execute();
+        $count_result = $count_query->get_result();
+        $count_row = $count_result->fetch_assoc();
+        
+        $numero_sesion = $count_row['count'] + 1; // Incrementar el contador para el nuevo registro
+        
+        $stmt->bind_param(
+            "sssssssss",
+            $servicio,
+            $profesional,
+            $fecha,
+            $hora,
+            $nombre,
+            $telefono,
+            $gmail,
+            $obra_social,
+            $numero_sesion
+        );
+
+        if ($stmt->execute()) {
+            // Guardar el teléfono y gmail en la sesión para usarlo en la confirmación
+            $_SESSION['telefono'] = $telefono;
+            $_SESSION['gmail'] = $gmail;
+
+            // Redirigir a la página de confirmación con los detalles del turno
+            header('Location: confirmacion.php');
+            exit();
+        } else {
+            $error_message = "Error al registrar el turno: " . $stmt->error;
+        }
     }
 
     $stmt->close();
@@ -88,6 +105,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="icon" href="img/santeLogo.jpg">
 
     <style>
+        .title{
+            color: #9DBC98;
+            text-align: center;
+            margin: auto;
+            letter-spacing: 9px;
+            font-weight: 700;
+            position: relative;
+            top: 30px;
+            background-color: #fff;
+            max-width: 600px ;
+            padding: 10px;
+            border: 2px solid #9DBC98;
+            border-radius: 50px;
+        }
         .footer_container{
             display: flex; 
             flex-wrap: wrap;
@@ -122,6 +153,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: #F6EBD5;
             transition: .5s;
         }
+
+        .error-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .error-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s;
+            background-color:rgb(128, 59, 59);
+        }
+
+        .error-icon {
+            font-size: 50px;
+            color: #e74c3c;
+            border: none;
+        }
+
+        .error-text {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #000;
+        }
+
+        .btn_volver{
+            border: none;
+            text-align: center;
+            width: 100px;
+            height: 40px;
+            margin-top: 10px;
+            background-color: #96B394;
+            color: #fff;
+            position: relative;
+            top: 10px;      
+            border-radius: 10px;      
+        }
+
+        .btn_volver a{
+            text-decoration: none;
+            color: #000;  
+            font-size: 16px;   
+        }
+
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -132,8 +223,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </nav>
 </header>
-    <h1 class="servicio_title">TUS DATOS</h1>
-    <hr style="position: relative; top: 40px; width: 40%; margin: auto;">
+    <h1 class="title">TUS DATOS</h1>
+
+    <?php if ($error_message): ?>
+        <div class="error-message">
+            <div class="error-content">
+                <div class="error-icon">❌</div>
+                <div class="error-text"><?php echo $error_message; ?></div>
+                <a href="fecha.php"><button class="btn_volver">Volver</button></a>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <form class="paciente_container" action="paciente.php" method="POST">
         <label for="nombre"></label>
