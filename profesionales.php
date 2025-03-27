@@ -15,12 +15,11 @@ if ($conn->connect_error) {
 
 $servicio = $_SESSION['servicio'] ?? '';
 $profesionales_por_servicio = [
-    'Kinesiología Dermatofuncional' => ['Florencia', 'Constanza'],
     'Nutrición' => ['Maria Paz'],
-    'Terapia Manual - RPG' => ['Lucia Foricher', 'Mariana'],
-    'Traumatología' => ['Miriam'],
-    'Drenaje Linfático' => ['Lucia Foricher', 'Florencia', 'Constanza'],
-    'Kinesiología' => ['Lucia Foricher', 'Mauro Robert','Melina Thome', 'Gastón Olgiati', 'German Fernandez', 'Alejandro Perez'],
+    'Terapia Manual - RPG' => ['Lucia Foricher', 'Mariana Ilari'],
+    'Traumatología' => ['Miriam Rossello'],
+    'Drenaje Linfático' => ['Florencia Goñi', 'Constanza Marinello'],
+    'Kinesiología' => ['Lucia Foricher', 'Alejandro Perez', 'Mauro Robert', 'Gastón Olgiati', 'German Fernandez','Melina Thome'],
 ];
 
 $profesionales = $profesionales_por_servicio[$servicio] ?? [];
@@ -46,32 +45,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-$precios_servicios = [
-    'Drenaje Linfático' => 12000,
-    'Kinesiología' => 11000,
-    'Kinesiología Dermatofuncional' => 13000,
-    'Nutrición' => 10000,
-    'Terapia Manual - RPG' => 12500,
-    'Traumatología' => 14000,
+// Obtener el precio del servicio desde la base de datos
+$precio_servicio = 'No disponible';
+if ($servicio !== '') {
+    $stmt = $conn->prepare("SELECT precio FROM precio_servicios WHERE servicio = ?");
+    if ($stmt) {
+        $stmt->bind_param("s", $servicio);
+        $stmt->execute();
+        $stmt->bind_result($precio);
+        if ($stmt->fetch()) {
+            $precio_servicio = $precio;
+        }
+        $stmt->close();
+    } else {
+        echo "Error al preparar la consulta: " . $conn->error;
+    }
+}
+
+// Lista de servicios disponibles y sus respectivas imágenes de fondo
+$servicios_imagenes = [
+    'Kinesiología Dermatofuncional' => 'img/kinesiologiadermatofuncional.jpg',
+    'Nutrición' => 'img/nutricion.jpg',
+    'Terapia Manual - RPG' => 'img/drenajeLinfatico.jpg',
+    'Traumatología' => 'img/drenajeLinfatico.jpg',
+    'Drenaje Linfático' => 'img/drenajeLinfatico.jpg',
+    'Kinesiología' => 'img/profesionalesIMG.jpg',
+];
+// Asignar la imagen de fondo según el servicio seleccionado
+$imagen_fondo = isset($servicios_imagenes[$servicio]) ? $servicios_imagenes[$servicio] : 'img/default.jpg';
+
+// Descripciones de los servicios
+$descripciones_servicios = [
+    'Kinesiología' => 'En Santé trabajamos bajo la modalidad de rehabilitación kinésica funcional. Es una sesión grupal de hasta 4 pacientes por hora - Trabajamos con obras sociales, consultanos por las diferenciales',
+    'Nutrición' => 'La consulta tiene una duración de 1 hora, donde se hace la evaluación general de los hábitos y estado general. Nuestra nutricionista se encuentra formada en alimentación basada en plantas y alimentación integral',
+    'Drenaje Linfático' => 'Es una tecnica manual suave de masaje no invasiva, realizada por kinesiologos, que ayuda a mejorar el flujo linfatico',
+    'Terapia Manual - RPG' => 'La terapia manual consta de una sesión individual en camilla con el profesional donde se realiza una evaluación global con el fin de encontrar la causa del dolor. Tambien puede utilizarse para como herramienta preventiva, buscando y trabajando sorbe los factores de riesgo de cada persona.',
+    'Kinesiología Dermatofuncional' => 'Mejora la salud y estética de la piel con tratamientos especializados.',
+    'Traumatología' => 'Diagnóstico y tratamiento de lesiones musculoesqueléticas.',
 ];
 
-$precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
+$descripcion_servicio = $descripciones_servicios[$servicio] ?? 'Descripción no disponible.';
 
-// Asociar imágenes a cada profesional
-// $imagenes_profesionales = [
-//     'Florencia' => 'img/florencia.jpg',
-//     'Constanza' => 'img/constanza.jpg',
-//     'Maria Paz' => 'img/maria.jpg',
-//     'Lucia' => 'img/lucia.jpg',
-//     'Mariana' => 'img/mariana.jpg',
-//     'Miriam' => 'img/miriam.jpg',
-//     'Mauro' => 'img/mauro.jpg',
-//     'German Fernandez' => 'img/german.jpg',
-//     'Gastón Olgiati' => 'img/gastonO.jpg',
-//     'Melina Thome' => 'img/melina.jpg',
-//     'Hernán López' => 'img/hernan.jpg',
-//     'Alejandro Perez' => 'img/alejandro.jpg',
-// ];
 ?>
 
 <!DOCTYPE html>
@@ -99,7 +113,6 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
             color: #000000;
         }
 
-
       .titulo_servicio {
         text-align: center;
         font-size: 24px;
@@ -118,11 +131,11 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
     }
 
     .profesional_container{
-        background: url('img/profesionalesIMG.jpg') no-repeat center center/cover;
+        background: url('<?php echo htmlspecialchars($imagen_fondo); ?>') no-repeat center center/cover;
         position: relative;
         padding: 50px 20px;
-        height: 72vh;
-        
+        height: auto;
+        min-height: 80vh;
     }
 
     .profesional_container::before{
@@ -132,7 +145,7 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.3);
         z-index: 0;
     }
 
@@ -144,8 +157,9 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
         margin: auto;
         z-index: 20 !important;
         position: relative;
-        background-color: transparent; /* Quita el fondo oscuro */
-        max-width: 600px; /* Ajusta el ancho total */
+        background-color: transparent;
+        max-width: 600px;
+        top: 40px;
     }
 
     .btn_seleccionar{
@@ -155,7 +169,7 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
         font-weight: 600;
         color: rgb(125, 129, 170);
         border-radius: 20px;
-        width: 200px;
+        width: 270px;
         height: auto;
         padding: 0px;
         margin: 10px;
@@ -174,7 +188,7 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
     .precio_servicio{
         margin: auto;
         position: absolute;
-        top: 15%;
+        top: 12.5%;
         left: 6%;
     }
     
@@ -188,14 +202,34 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
         border-radius: 10px;
     }
 
+    .descripcion_servicio {
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 20px;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 100px;
+        border: 2px solid #9DBC98;
+        max-width: 600px;
+        margin: auto;
+        z-index: 10 !important;
+        position: relative;
+        top: 15px;
+    }
+
+    .footer_container{
+        position: relative;
+        top: 40px;
+    }
+
     @media (max-width: 876px) {
         
         .profesional_container{
-        background: url('img/profesionalesIMG.jpg') no-repeat center center/cover;
+        background: url('<?php echo htmlspecialchars($imagen_fondo); ?>') no-repeat center center/cover;
         position: relative;
         padding: 50px 20px;
         height: 85vh;
-        
         }
 
         .precio_servicio{
@@ -213,7 +247,7 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
     @media (max-width: 495px) {
         
         .profesional_container{
-        background: url('img/profesionalesIMG.jpg') no-repeat center center/cover;
+        background: url('<?php echo htmlspecialchars($imagen_fondo); ?>') no-repeat center center/cover;
         position: relative;
         padding: 50px 20px;
         height: auto;
@@ -235,27 +269,44 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
     <section class="profesional_container">
         <h1 class='titulo_servicio'><?php echo htmlspecialchars($servicio); ?></h1>
         <div class="precio_servicio">
-            <h4>Valor de la sesion particular: $<?php echo htmlspecialchars($precio_servicio); ?></h4>
+            <h4>Valor de la sesión particular: $<?php echo htmlspecialchars($precio_servicio); ?></h4>
+        </div>
+        <div class="descripcion_servicio">
+            <p><?php echo htmlspecialchars($descripcion_servicio); ?></p>
         </div>
         <div class="contenedor_profesionales">
             <?php
             if (empty($profesionales)) {
                 echo $no_profesionales_msg;
-                } else {
+            } else {
                 foreach ($profesionales as $profesional) {
+                    // Obtener un horario de disponibilidad del profesional
+                    $stmt = $conn->prepare("SELECT hora_inicio, hora_fin FROM disponibilidad WHERE nombre_profesional = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param("s", $profesional);
+                        $stmt->execute();
+                        $stmt->bind_result($hora_inicio, $hora_fin);
+                        $stmt->fetch();
+                        $stmt->close();
+                    } else {
+                        $hora_inicio = $hora_fin = 'No disponible';
+                    }
+
                     echo "
-                 <div class='tarjeta_profesional'>
-                    <form method='POST'>
-                        <input type='hidden' name='profesional' value='$profesional'>
-                        <button type='submit' class='btn_seleccionar'><p class='nombre_profesional'>Lic. $profesional</p></button>
-                        <hr>
-                    </form>
-                 </div>";
+                        <div class='tarjeta_profesional'>
+                            <form method='POST'>
+                                <input type='hidden' name='profesional' value='$profesional'>
+                                <button type='submit' class='btn_seleccionar'>
+                                    <p class='nombre_profesional'>Lic. $profesional</p>
+                                    <p class='horarios_profesional'>$hora_inicio - $hora_fin</p>
+                                </button>
+                                <hr>
+                            </form>
+                        </div>";
                 }
             }
             ?>
         </div>
-
         <footer class="footer_container">
         <div class="iconos_contianer">
             <a href="https://www.instagram.com/santecentrodesalud/"><i class="fa-brands fa-instagram"></i></a>
@@ -264,27 +315,5 @@ $precio_servicio = $precios_servicios[$servicio] ?? 'No disponible';
         </div>
         </footer>
     </section>
-
-    
-    <!-- <div class="contenedor_profesionales">
-        <?php
-        // if (empty($profesionales)) {
-        //     echo $no_profesionales_msg;
-        // } else {
-        //     foreach ($profesionales as $profesional) {
-        //         echo "
-        //         <div class='tarjeta_profesional'>
-        //             <p class='nombre_profesional'>Lic. $profesional</p>
-        //             <form method='POST'>
-        //                 <input type='hidden' name='profesional' value='$profesional'>
-        //                 <button type='submit' class='btn_seleccionar'>Seleccionar</button>
-        //             </form>
-        //         </div>";
-        //     }
-        // }
-        ?>
-    </div>
-    </div> -->
-    
 </body>
 </html>
