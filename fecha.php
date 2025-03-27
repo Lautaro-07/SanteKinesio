@@ -94,87 +94,124 @@ $imagenes_profesionales = [
 $servicio = isset($_SESSION['servicio']) ? $_SESSION['servicio'] : 'Servicio no definido';
 
 $profesionalesDescripciones = [
-    'Lucia Foricher' => [
-        'nombre' => 'Lucia Foricher Castellon',
-        'imagen' => '../img/lucia.jpg',
+    'Hernan Lopez' => [
+        'nombre' => 'Hernan Lopez',
+        'imagen' => '../img/hernan.jpg',
         'descripciones' => [
-            'Licenciada en kinesiología'
-        ]
-    ],
-    'Alejandro Perez' => [
-        'nombre' => 'Alejandro Perez Etchever',
-        'imagen' => '../img/alejandro.jpg',
-        'descripciones' => [
-            'Especialista en kinesiología deportiva y rehabilitación de lesiones.'
-        ]
-    ],
-    'Constanza Marinello' => [
-        'nombre' => 'Constanza Marinello',
-        'imagen' => '../img/constanza.jpg',
-        'descripciones' => [
-            'Licenciada en kinesiología con enfoque en tratamientos posturales y de columna.'
-        ]
-    ],
-    'Florencia Goñi' => [
-        'nombre' => 'Florencia Goñi',
-        'imagen' => '../img/florencia.jpg',
-        'descripciones' => [
-            'Especialista en kinesiología pediátrica y desarrollo motor infantil.'
-        ]
-    ],
-    'Gastón Olgiati' => [
-        'nombre' => 'Gastón Olgiati',
-        'imagen' => '../img/GastonO.jpg',
-        'descripciones' => [
-            'Licenciado en kinesiología con experiencia en rehabilitación neurológica.'
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Área de abordaje: traumatología y neurorehabilitación en adultos mayores.'
         ]
     ],
     'Maria Paz' => [
-        'nombre' => 'Maria Paz Ruilopez',
+        'nombre' => 'Maria Paz',
         'imagen' => '../img/maria.jpg',
         'descripciones' => [
-            'Licenciada en nutrición, especialista en dietas personalizadas y control de peso.'
+            'Lic. Nutrición',
+            'Área de abordaje: traumatología y neurorehabilitación en adultos mayores.'
+        ]
+    ],
+    'Alejandro Perez' => [
+        'nombre' => 'Alejandro Perez Etcheber',
+        'imagen' => '../img/alejandro.jpg',
+        'descripciones' => [
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Curso de abordaje integral del adulto mayor',
+            'Curso de kinefilaxia, flexibilidad y movilidad.'
         ]
     ],
     'Melina Thome' => [
         'nombre' => 'Melina Thome',
         'imagen' => '../img/melina.jpg',
         'descripciones' => [
-            'Kinesióloga con experiencia en rehabilitación deportiva y terapias manuales.'
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Área de abordaje: rehabilitación traumatológica de adultos y adultos mayores.'
         ]
     ],
-    'Miriam Rossello' => [
-        'nombre' => 'Dra. Miriam Rossello',
-        'imagen' => '../img/miriam.jpg',
-        'descripciones' => [
-            'Especialista en miembro superior con amplia experiencia en cirugía y rehabilitación.'
-        ]
-    ],
-
     'Mauro Robert' => [
         'nombre' => 'Dr. Mauro Robert',
         'imagen' => '../img/mauro.jpg',
         'descripciones' => [
-            'Especialista en miembro superior con amplia experiencia en cirugía y rehabilitación.'
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Rehabilitación traumatológica deportiva',
+            'Método Busquet en formación',
+            'MEP sports',
+            'Tapping neuromuscular',
+            'Punción seca'
         ]
     ],
-
+    'Gastón Olgiati' => [
+        'nombre' => 'Gastón Olgiati',
+        'imagen' => 'img/gastonO.jpg',
+        'descripciones' => [
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Método Busquet en formación',
+            'Tapping neuromuscular',
+            'MEP Sports',
+            'Vendaje deportivo',
+            'Reprogramación propioceptiva'
+        ]
+    ],
     'German Fernandez' => [
         'nombre' => 'Dr. German Fernandez',
         'imagen' => '../img/german.jpg',
         'descripciones' => [
-            'Especialista en miembro superior con experiencia en cirugía y rehabilitación.'
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Orientación: rehabilitación traumatológica y deportiva, atención de adultos mayores',
+            'Cursos:',
+            'Abordaje integral del adulto mayor - AAK',
+            'Gimnasia postural',
+            'Reprogramación propioceptiva Busquet',
+            'Actualización en tendinopatías'
+        ]
+    ],
+    'Mariana Ilari' => [
+        'nombre' => 'Dra. Mariana Ilari',
+        'imagen' => '../img/mariana.jpg',
+        'descripciones' => [
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Método Busquet, reprogramación propioceptiva',
+            'Rehabilitación traumatológica y postural',
+            'Concepto Mulligan',
+            'TMR'
+        ]
+    ],
+    'Lucia Foricher' => [
+        'nombre' => 'Lucia Foricher Castellon',
+        'imagen' => '../img/lucia.jpg',
+        'descripciones' => [
+            'Lic. en kinesiología y fisiatría, UCALP (2018)',
+            'Formada en:',
+            'TMR-Técnicas Metaméricas Reflejas, formación completa',
+            'Método Busquet, formación completa y reprogramación propioceptiva',
+            'Métodos globales de corrección postural',
+            'Mulligan Concept',
+            'Punción seca',
+            'Drenaje linfático manual, método Leduc'
+        ]
+    ],
+    'Constanza Marinello' => [
+        'nombre' => 'Constanza Marinello',
+        'imagen' => '../img/constanza.jpg',
+        'descripciones' => [
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Posgrado en kinesiología dermatofuncional y estética',
+            'Curso superior de Flebología y Linfología, Método Leduc'
+        ]
+    ],
+    'Florencia Goñi' => [
+        'nombre' => 'Florencia Goñi',
+        'imagen' => '../img/florencia.jpg',
+        'descripciones' => [
+            'Lic. en kinesiología y fisiatría, UCALP',
+            'Posgrado en kinesiología dermatofuncional y estética',
+            'Curso superior de Flebología y Linfología, Método Leduc'
         ]
     ]
-
 ];
 
-$servicio = isset($_SESSION['servicio']) ? $_SESSION['servicio'] : 'Servicio no definido';
-$descripcion = isset($profesionalesDescripciones[$profesional]['descripciones']) ? implode('<br>', $profesionalesDescripciones[$profesional]['descripciones']) : 'Descripción no disponible';
-
+$descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripciones'][0]) ? $profesionalesDescripciones[$profesional]['descripciones'][0] : 'Descripción no disponible';
 
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -332,14 +369,37 @@ $descripcion = isset($profesionalesDescripciones[$profesional]['descripciones'])
         }
 
         .profesional-info p {
-            font-size: 20px;
+            font-size: 17px;
             text-align: center;
             margin-top: 5px;
-            color: #ccc;
+            color:rgb(190, 190, 190);
             position: relative;
-            top: 70px;
+            top: 50px;
         }
 
+        .btn-vermas{
+            z-index: 300;
+            position: relative;
+            top: 50px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #9DBC98;
+            height: 40px;
+            width: 100px;
+            padding: 10px;
+            text-decoration: none;
+            color: #fff;
+            position: absolute;
+            top: 90%;
+            left: 23%;
+            border-radius: 10px;
+        }
+
+        .btn-vermas:hover{
+            color: #fff;
+            background-color:rgb(131, 165, 126);
+            transition: .5s;
+        }
 
         @media (max-width: 768px) {
     .calendar-container {
@@ -425,7 +485,8 @@ $descripcion = isset($profesionalesDescripciones[$profesional]['descripciones'])
             <img src="<?= $imagenes_profesionales[$profesional] ?>" alt="<?= $profesional ?>">
             </div>
             <h2><?= $profesionalesDescripciones[$profesional]['nombre'] ?></h2>
-            <p><?php echo $descripcion; ?></p>
+            <p><?php echo $descripcionCorta; ?></p>
+            <a href="pages/detalle.php?nombre=<?= urlencode($profesional) ?>" class="btn-vermas">Ver Más</a> <!-- Botón Ver Más -->
         </div>
     </div>
 
