@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $servicios = [
                 'Drenaje Linfático',
                 'Kinesiología',
-                'Kinesiología Dermatofuncional',
+                'Taller Movimiento Saludable',
                 'Nutrición',
                 'Terapia Manual - RPG',
                 'Traumatología'
