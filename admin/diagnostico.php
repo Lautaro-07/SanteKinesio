@@ -9,12 +9,12 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 }
 
 // Verificar si se ha proporcionado un ID de paciente
-if (!isset($_GET['id'])) {
+if (!isset($_GET['id']) && !isset($_GET['eliminar_id'])) {
     echo "ID de paciente no proporcionado.";
     exit();
 }
 
-$id = $_GET['id'];
+$id = isset($_GET['id']) ? $_GET['id'] : $_GET['eliminar_id'];
 
 // Conexión a la base de datos
 $conn = new mysqli('localhost', 'root', '', 'sante');
@@ -95,7 +95,6 @@ $stmt_imagenes->bind_param('i', $id);
 $stmt_imagenes->execute();
 $imagenes_result = $stmt_imagenes->get_result();
 $imagenes = $imagenes_result->fetch_all(MYSQLI_ASSOC);
-
 
 // Manejar el envío del formulario de diagnóstico
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_diagnostico'])) {
@@ -186,9 +185,7 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
     }
     exit();
 }
-
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -206,27 +203,28 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
     <title>Diagnóstico del Paciente</title>
     <style>
         .nav_container {
-    background-color: #F6EBD5 !important;
-    margin: 0;
-    padding: 0 !important;
-}
+            background-color: #F6EBD5 !important;
+            margin: 0;
+            padding: 0 !important;
+        }
 
-.logo_container {
-    width: 70px;
-    height: 80px;
-    position: relative;
-    left: 20px;
-}
+        .logo_container {
+            width: 70px;
+            height: 80px;
+            position: relative;
+            left: 20px;
+        }
 
-.logo {
-    width: 80px;
-    height: 100%;
-}
+        .logo {
+            width: 80px;
+            height: 100%;
+        }
 
         .img-thumbnail {
             max-width: 150px;
             cursor: pointer;
         }
+
         .modal {
             display: none;
             position: fixed;
@@ -238,12 +236,14 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
             overflow: auto;
             background-color: rgba(0, 0, 0, 0.8);
         }
+
         .modal-content {
             margin: 15% auto;
             display: block;
             width: 80%;
             max-width: 700px;
         }
+
         .close {
             position: absolute;
             top: 10px;
@@ -254,6 +254,7 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
             transition: 0.3s;
             cursor: pointer;
         }
+
         .close:hover,
         .close:focus {
             color: #bbb;
@@ -543,9 +544,9 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
                     </form>
                     <a href="?eliminar_id=<?php echo $paciente['id']; ?>" class="delete-btn" onclick="return confirm('¿Estás seguro de que quieres eliminar este paciente?');">Eliminar</a>
                     <br>
-                    <button class="edit-btn" onclick="abrirFormulario(<?php echo $paciente['id']; ?>, '<?php echo $paciente['obra_social']; ?>', '<?php echo $paciente['fecha']; ?>', '<?php echo $paciente['hora']; ?>', '<?php echo $paciente['numero_sesion']; ?>')">Editar</button>
+                    <button class="edit-btn" onclick="abrirFormulario(<?php echo $paciente['id']; ?>, '<?php echo $paciente['obra_social']; ?>', '<?php echo $paciente['fecha']; ?>', '<?php echo $paciente['hora']; ?>', <?php echo $paciente['numero_sesion']; ?>)">Editar</button>
                     <br>
-                    <button class="nota-btn" onclick="notaFormulario('<?php echo $paciente['id']; ?>', '<?php echo addslashes(str_replace(array("\r\n", "\n", "\r"), '', $paciente['comentarios'])); ?>')">Editar nota</button>
+                    <button class="nota-btn" onclick="notaFormulario('<?php echo $paciente['id']; ?>', '<?php echo addslashes(str_replace(array("\r\n", "\n", "\r"), '', $paciente['comentarios'])); ?>')">Agregar Nota</button>
                 </td>
             </tr>
             <?php if (count($imagenes) > 0): ?>
@@ -581,7 +582,7 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
             <button type="submit" name="guardar_imagenes">Guardar Imágenes</button>
         </form>
     </div>
-    <div id="formularioEdicion" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); background-color:white; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+    <div id="formularioEdicion" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); background-color:white; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.15); z-index:1000; max-width:400px; width:90%;">
         <h2>Editar Paciente</h2>
         <form method="POST" action="diagnostico.php?id=<?php echo $id; ?>">
             <input type="hidden" name="editar_id" id="editar_id">
@@ -602,7 +603,7 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
         </form>
     </div>
 
-    <div id="formularioNotas" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); background-color:white; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+    <div id="formularioNotas" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); background-color:white; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.15); z-index:1000; max-width:400px; width:90%;">
         <h2>Editar Nota</h2>
         <form method="POST" action="diagnostico.php?id=<?php echo $id; ?>">
             <input type="hidden" name="nota_id" id="nota_id">
@@ -642,6 +643,7 @@ if (isset($_POST['nota_id']) && isset($_POST['nuevo_comentario'])) {
         function cerrarNotaFormulario() {
             document.getElementById('formularioNotas').style.display = 'none';
         }
+        
         function mostrarImagen(img) {
             var modal = document.getElementById('modal');
             var modalImg = document.getElementById('imgModal');
