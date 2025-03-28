@@ -1,306 +1,306 @@
-    <?php
-    session_start([
-        'cookie_lifetime' => 0, // La sesión se cierra cuando se cierra el navegador
-    ]);
+<?php
+session_start([
+    'cookie_lifetime' => 0, // La sesión se cierra cuando se cierra el navegador
+]);
 
-    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-        header('Location: ../index.php');
-        exit();
-    }
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: ../index.php');
+    exit();
+}
 
-    $profesional = $_SESSION['profesional'];
+$profesional = $_SESSION['profesional'];
 
-    // Horarios disponibles por profesional en Sante
-    if (!isset($_SESSION['disponibilidadProfesionales'])) {
-        $_SESSION['disponibilidadProfesionales'] = [
-            'Lucia Foricher' => [
-                'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Friday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Mauro Robert' => [
-                'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Friday' => ['13:00', '14:00', '15:00', '16:00']
-            ],
-            'German Fernandez' => [
-                'Monday' => ['17:30', '18:30', '19:30'],
-                'Tuesday' => ['17:30', '18:30', '19:30'],
-                'Wednesday' => ['17:30', '18:30', '19:30'],
-                'Thursday' => ['17:30', '18:30', '19:30'],
-                'Friday' => ['17:30', '18:30', '19:30']
-            ],
-            'Gastón Olgiati' => [
-                'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Friday' => ['13:00', '14:00', '15:00', '16:00']
-            ],
-            'Hernán López' => [
-                'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Thursday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Alejandro Perez' => [
-                'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Friday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Melina Thome' => [
-                'Monday' => ['17:00', '18:00', '19:00'],
-                'Wednesday' => ['17:00', '18:00', '19:00'],
-                'Friday' => ['17:00', '18:00', '19:00']
-            ],
-            'Maria Paz' => [
-                'Wednesday' => ['17:00', '18:00', '19:00'],
-                'Saturday' => ['12:00']
-            ],
-            'Miriam Rossello' => [
-                'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Thursday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Florencia Goñi' => [
-                'Monday' => ['17:00', '18:00'],
-                'Tuesday' => ['17:00', '18:00'],
-                'Thursday' => ['17:00']
-            ],
-            'Constanza Marinello' => [
-                'Monday' => ['15:00'],
-                'Tuesday' => ['16:00', '17:00'],
-                'Thursday' => ['13:00', '14:00', '15:00'],
-                'Friday' => ['15:00', '16:00']
-            ],
-            'Mariana' => [
-                'Thursday' => ['09:30', '10:30'],
-                'Friday' => ['08:30', '09:30', '10:30']
-            ]
-        ];
-    }
+// Horarios disponibles por profesional en Sante
+if (!isset($_SESSION['disponibilidadProfesionales'])) {
+    $_SESSION['disponibilidadProfesionales'] = [
+        'Lucia Foricher' => [
+            'Monday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Friday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Mauro Robert' => [
+            'Monday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Friday' => ['13:00', '14:00', '15:00', '16:00']
+        ],
+        'German Fernandez' => [
+            'Monday' => ['17:30', '18:30', '19:30'],
+            'Tuesday' => ['17:30', '18:30', '19:30'],
+            'Wednesday' => ['17:30', '18:30', '19:30'],
+            'Thursday' => ['17:30', '18:30', '19:30'],
+            'Friday' => ['17:30', '18:30', '19:30']
+        ],
+        'Gastón Olgiati' => [
+            'Monday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Friday' => ['13:00', '14:00', '15:00', '16:00']
+        ],
+        'Hernán López' => [
+            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Alejandro Perez' => [
+            'Monday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Friday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Melina Thome' => [
+            'Monday' => ['17:00', '18:00', '19:00'],
+            'Wednesday' => ['17:00', '18:00', '19:00'],
+            'Friday' => ['17:00', '18:00', '19:00']
+        ],
+        'Maria Paz' => [
+            'Wednesday' => ['17:00', '18:00', '19:00'],
+            'Saturday' => ['12:00']
+        ],
+        'Miriam Rossello' => [
+            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Florencia Goñi' => [
+            'Monday' => ['17:00', '18:00'],
+            'Tuesday' => ['17:00', '18:00'],
+            'Thursday' => ['17:00']
+        ],
+        'Constanza Marinello' => [
+            'Monday' => ['15:00'],
+            'Tuesday' => ['16:00', '17:00'],
+            'Thursday' => ['13:00', '14:00', '15:00'],
+            'Friday' => ['15:00', '16:00']
+        ],
+        'Mariana' => [
+            'Thursday' => ['09:30', '10:30'],
+            'Friday' => ['08:30', '09:30', '10:30']
+        ]
+    ];
+}
 
-    $disponibilidadProfesionales = $_SESSION['disponibilidadProfesionales'];
+$disponibilidadProfesionales = $_SESSION['disponibilidadProfesionales'];
 
-    function deshabilitarHorarios(&$disponibilidad, $profesional) {
-        $diasSemana = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        $inicioSemana = new DateTime();
-        $inicioSemana->modify('this week'); // Obtén el inicio de la semana actual
-        $finSemana = clone $inicioSemana;
-        $finSemana->modify('+6 days'); // Obtén el final de la semana actual
-        
-        foreach ($diasSemana as $dia) {
-            $fechaDia = clone $inicioSemana;
-            $fechaDia->modify($dia);
-            if ($fechaDia >= $inicioSemana && $fechaDia <= $finSemana) {
-                if (isset($disponibilidad[$profesional][$dia])) {
-                    foreach ($disponibilidad[$profesional][$dia] as &$hora) {
-                        $hora = "No disponible"; // Marca la hora como no disponible
-                    }
+function deshabilitarHorarios(&$disponibilidad, $profesional) {
+    $diasSemana = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    $inicioSemana = new DateTime();
+    $inicioSemana->modify('this week'); // Obtén el inicio de la semana actual
+    $finSemana = clone $inicioSemana;
+    $finSemana->modify('+6 days'); // Obtén el final de la semana actual
+    
+    foreach ($diasSemana as $dia) {
+        $fechaDia = clone $inicioSemana;
+        $fechaDia->modify($dia);
+        if ($fechaDia >= $inicioSemana && $fechaDia <= $finSemana) {
+            if (isset($disponibilidad[$profesional][$dia])) {
+                foreach ($disponibilidad[$profesional][$dia] as &$hora) {
+                    $hora = "No disponible"; // Marca la hora como no disponible
                 }
             }
         }
     }
+}
 
-    function habilitarHorarios(&$disponibilidad, $profesional) {
-        $originalDisponibilidad = [
-            'Lucia Foricher' => [
-                'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Friday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Mauro Robert' => [
-                'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Friday' => ['13:00', '14:00', '15:00', '16:00']
-            ],
-            'German Fernandez' => [
-                'Monday' => ['17:30', '18:30', '19:30'],
-                'Tuesday' => ['17:30', '18:30', '19:30'],
-                'Wednesday' => ['17:30', '18:30', '19:30'],
-                'Thursday' => ['17:30', '18:30', '19:30'],
-                'Friday' => ['17:30', '18:30', '19:30']
-            ],
-            'Gastón Olgiati' => [
-                'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-                'Friday' => ['13:00', '14:00', '15:00', '16:00']
-            ],
-            'Hernán López' => [
-                'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Thursday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Alejandro Perez' => [
-                'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Friday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Melina Thome' => [
-                'Monday' => ['17:00', '18:00', '19:00'],
-                'Wednesday' => ['17:00', '18:00', '19:00'],
-                'Friday' => ['17:00', '18:00', '19:00']
-            ],
-            'Maria Paz' => [
-                'Wednesday' => ['17:00', '18:00', '19:00'],
-                'Saturday' => ['12:00']
-            ],
-            'Miriam Rossello' => [
-                'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-                'Thursday' => ['08:00', '09:00', '10:00', '11:00']
-            ],
-            'Florencia Goñi' => [
-                'Monday' => ['17:00', '18:00'],
-                'Tuesday' => ['17:00', '18:00'],
-                'Thursday' => ['17:00']
-            ],
-            'Constanza Marinello' => [
-                'Monday' => ['15:00'],
-                'Tuesday' => ['16:00', '17:00'],
-                'Thursday' => ['13:00', '14:00', '15:00'],
-                'Friday' => ['15:00', '16:00']
-            ],
-            'Mariana' => [
-                'Thursday' => ['09:30', '10:30'],
-                'Friday' => ['08:30', '09:30', '10:30']
-            ]
-        ];
-
-        $disponibilidad[$profesional] = $originalDisponibilidad[$profesional];
-    }
-
-    // Inicializar la conexión a la base de datos
-    $conn = new mysqli('localhost', 'root', '', 'sante');
-    if ($conn->connect_error) {
-        die("Conexión fallida: " . $conn->connect_error);
-    }
-
-    // Manejar las solicitudes POST
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (isset($_POST['deshabilitar'])) {
-            deshabilitarHorarios($disponibilidadProfesionales, $profesional);
-            $_SESSION['disponibilidadProfesionales'] = $disponibilidadProfesionales;
-            echo "<script>alert('Horarios deshabilitados.'); window.location.href='pacientes.php';</script>";
-        } elseif (isset($_POST['habilitar'])) {
-            habilitarHorarios($disponibilidadProfesionales, $profesional);
-            $_SESSION['disponibilidadProfesionales'] = $disponibilidadProfesionales;
-            echo "<script>alert('Horarios habilitados.'); window.location.href='pacientes.php';</script>";
-        } elseif (isset($_POST['asistencia_id'])) {
-            $asistio = isset($_POST['asistio']) ? 1 : 0;
-            $asistencia_id = $_POST['asistencia_id'];
-
-            $sql_update = "UPDATE turnos SET asistio = ? WHERE id = ?";
-            $stmt = $conn->prepare($sql_update);
-            $stmt->bind_param('ii', $asistio, $asistencia_id);
-
-            if ($stmt->execute()) {
-                echo "<script>alert('Estado de asistencia actualizado correctamente.'); window.location.href = 'pacientes.php';</script>";
-            } else {
-                echo "Error al actualizar el estado de asistencia: " . $conn->error;
-            }
-        }
-    }
-
-    // Verificar si se ha presionado el botón para ver pacientes de un mes anterior
-    $mes_actual = date('m');
-    $anio_actual = date('Y');
-    $mes = isset($_GET['mes']) ? $_GET['mes'] : $mes_actual;
-    $anio = isset($_GET['anio']) ? $_GET['anio'] : $anio_actual;
-
-    // Variables para búsqueda
-    $busqueda_nombre = isset($_GET['nombre']) ? $_GET['nombre'] : '';
-    $busqueda_telefono = isset($_GET['telefono']) ? $_GET['telefono'] : '';
-    $profesional = $_SESSION['profesional'];
-
-    // Construir la consulta SQL con los filtros de búsqueda
-    $sql = "SELECT * FROM turnos WHERE profesional = ?";
-    $params = [$profesional];
-    $param_types = 's';
-
-    if (!empty($busqueda_nombre)) {
-        $sql .= " AND nombre LIKE ?";
-        $params[] = '%' . $busqueda_nombre . '%';
-        $param_types .= 's';
-    }
-
-    if (!empty($busqueda_telefono)) {
-        $sql .= " AND telefono LIKE ?";
-        $params[] = '%' . $busqueda_telefono . '%';
-        $param_types .= 's';
-    }
-
-    $sql .= " AND MONTH(fecha) = ? AND YEAR(fecha) = ?";
-    $params[] = $mes;
-    $params[] = $anio;
-    $param_types .= 'ii';
-
-    $sql .= " ORDER BY fecha";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        die("Error al preparar la consulta: " . $conn->error);
-    }
-    $stmt->bind_param($param_types, ...$params);
-    $stmt->execute();
-    $pacientes = $stmt->get_result();
-
-    // Verificar si la consulta fue exitosa
-    if ($pacientes === false) {
-        echo "Error al obtener los pacientes: " . $conn->error;
-        exit();
-    }
-
-    // Verificar los resultados obtenidos
-    $pacientes_array = $pacientes->fetch_all(MYSQLI_ASSOC);
-
-    // Mapear días de la semana
-    $dias_semana = [
-        0 => 'Domingo',
-        1 => 'Lunes',
-        2 => 'Martes',
-        3 => 'Miércoles',
-        4 => 'Jueves',
-        5 => 'Viernes',
-        6 => 'Sábado'
+function habilitarHorarios(&$disponibilidad, $profesional) {
+    $originalDisponibilidad = [
+        'Lucia Foricher' => [
+            'Monday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Friday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Mauro Robert' => [
+            'Monday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Friday' => ['13:00', '14:00', '15:00', '16:00']
+        ],
+        'German Fernandez' => [
+            'Monday' => ['17:30', '18:30', '19:30'],
+            'Tuesday' => ['17:30', '18:30', '19:30'],
+            'Wednesday' => ['17:30', '18:30', '19:30'],
+            'Thursday' => ['17:30', '18:30', '19:30'],
+            'Friday' => ['17:30', '18:30', '19:30']
+        ],
+        'Gastón Olgiati' => [
+            'Monday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
+            'Friday' => ['13:00', '14:00', '15:00', '16:00']
+        ],
+        'Hernán López' => [
+            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Alejandro Perez' => [
+            'Monday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Friday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Melina Thome' => [
+            'Monday' => ['17:00', '18:00', '19:00'],
+            'Wednesday' => ['17:00', '18:00', '19:00'],
+            'Friday' => ['17:00', '18:00', '19:00']
+        ],
+        'Maria Paz' => [
+            'Wednesday' => ['17:00', '18:00', '19:00'],
+            'Saturday' => ['12:00']
+        ],
+        'Miriam Rossello' => [
+            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
+            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+        ],
+        'Florencia Goñi' => [
+            'Monday' => ['17:00', '18:00'],
+            'Tuesday' => ['17:00', '18:00'],
+            'Thursday' => ['17:00']
+        ],
+        'Constanza Marinello' => [
+            'Monday' => ['15:00'],
+            'Tuesday' => ['16:00', '17:00'],
+            'Thursday' => ['13:00', '14:00', '15:00'],
+            'Friday' => ['15:00', '16:00']
+        ],
+        'Mariana' => [
+            'Thursday' => ['09:30', '10:30'],
+            'Friday' => ['08:30', '09:30', '10:30']
+        ]
     ];
 
-    // Agrupar pacientes por día de la semana y hora
-    $pacientes_por_dia_y_hora = [];
-    foreach ($pacientes_array as $row) {
-        $dia_semana = date('N', strtotime($row['fecha'])) % 7; // 0 (para domingo) a 6 (para sábado)
-        $hora = date('H:i', strtotime($row['hora'])); // Formato HH:MM
-        if (!isset($pacientes_por_dia_y_hora[$dia_semana])) {
-            $pacientes_por_dia_y_hora[$dia_semana] = [];
+    $disponibilidad[$profesional] = $originalDisponibilidad[$profesional];
+}
+
+// Inicializar la conexión a la base de datos
+$conn = new mysqli('localhost', 'root', '', 'sante');
+if ($conn->connect_error) {
+    die("Conexión fallida: " . $conn->connect_error);
+}
+
+// Manejar las solicitudes POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['deshabilitar'])) {
+        deshabilitarHorarios($disponibilidadProfesionales, $profesional);
+        $_SESSION['disponibilidadProfesionales'] = $disponibilidadProfesionales;
+        echo "<script>alert('Horarios deshabilitados.'); window.location.href='pacientes.php';</script>";
+    } elseif (isset($_POST['habilitar'])) {
+        habilitarHorarios($disponibilidadProfesionales, $profesional);
+        $_SESSION['disponibilidadProfesionales'] = $disponibilidadProfesionales;
+        echo "<script>alert('Horarios habilitados.'); window.location.href='pacientes.php';</script>";
+    } elseif (isset($_POST['asistencia_id'])) {
+        $asistio = isset($_POST['asistio']) ? 1 : 0;
+        $asistencia_id = $_POST['asistencia_id'];
+
+        $sql_update = "UPDATE turnos SET asistio = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql_update);
+        $stmt->bind_param('ii', $asistio, $asistencia_id);
+
+        if ($stmt->execute()) {
+            echo "<script>alert('Estado de asistencia actualizado correctamente.'); window.location.href = 'pacientes.php';</script>";
+        } else {
+            echo "Error al actualizar el estado de asistencia: " . $conn->error;
         }
-        if (!isset($pacientes_por_dia_y_hora[$dia_semana][$hora])) {
-            $pacientes_por_dia_y_hora[$dia_semana][$hora] = [];
-        }
-        $pacientes_por_dia_y_hora[$dia_semana][$hora][] = $row;
     }
+}
 
-    // Colores por servicio
-    $colores_servicio = [
-        'Kinesiología' => '#E2C6C2',
-        'Terapia manual' => '#A6DA9C',
-        'Drenaje Linfático' => '#BBFFFF',
-        'Nutrición' => '#EE976A',
-        'Traumatología' => '#A9B0F4'
-    ];
+// Verificar si se ha presionado el botón para ver pacientes de un mes anterior
+$mes_actual = date('m');
+$anio_actual = date('Y');
+$mes = isset($_GET['mes']) ? $_GET['mes'] : $mes_actual;
+$anio = isset($_GET['anio']) ? $_GET['anio'] : $anio_actual;
 
-    function obtenerMesAnterior($mes, $anio) {
-        if ($mes == 1) {
-            return [12, $anio - 1];
-        }
-        return [$mes - 1, $anio];
+// Variables para búsqueda
+$busqueda_nombre = isset($_GET['nombre']) ? $_GET['nombre'] : '';
+$busqueda_telefono = isset($_GET['telefono']) ? $_GET['telefono'] : '';
+$profesional = $_SESSION['profesional'];
+
+// Construir la consulta SQL con los filtros de búsqueda
+$sql = "SELECT * FROM turnos WHERE profesional = ?";
+$params = [$profesional];
+$param_types = 's';
+
+if (!empty($busqueda_nombre)) {
+    $sql .= " AND nombre LIKE ?";
+    $params[] = '%' . $busqueda_nombre . '%';
+    $param_types .= 's';
+}
+
+if (!empty($busqueda_telefono)) {
+    $sql .= " AND telefono LIKE ?";
+    $params[] = '%' . $busqueda_telefono . '%';
+    $param_types .= 's';
+}
+
+$sql .= " AND MONTH(fecha) = ? AND YEAR(fecha) = ?";
+$params[] = $mes;
+$params[] = $anio;
+$param_types .= 'ii';
+
+$sql .= " ORDER BY fecha";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Error al preparar la consulta: " . $conn->error);
+}
+$stmt->bind_param($param_types, ...$params);
+$stmt->execute();
+$pacientes = $stmt->get_result();
+
+// Verificar si la consulta fue exitosa
+if ($pacientes === false) {
+    echo "Error al obtener los pacientes: " . $conn->error;
+    exit();
+}
+
+// Verificar los resultados obtenidos
+$pacientes_array = $pacientes->fetch_all(MYSQLI_ASSOC);
+
+// Mapear días de la semana
+$dias_semana = [
+    0 => 'Domingo',
+    1 => 'Lunes',
+    2 => 'Martes',
+    3 => 'Miércoles',
+    4 => 'Jueves',
+    5 => 'Viernes',
+    6 => 'Sábado'
+];
+
+// Agrupar pacientes por día de la semana y hora
+$pacientes_por_dia_y_hora = [];
+foreach ($pacientes_array as $row) {
+    $dia_semana = date('N', strtotime($row['fecha'])) % 7; // 0 (para domingo) a 6 (para sábado)
+    $hora = date('H:i', strtotime($row['hora'])); // Formato HH:MM
+    if (!isset($pacientes_por_dia_y_hora[$dia_semana])) {
+        $pacientes_por_dia_y_hora[$dia_semana] = [];
     }
-
-    function obtenerMesSiguiente($mes, $anio) {
-        if ($mes == 12) {
-            return [1, $anio + 1];
-        }
-        return [$mes + 1, $anio];
+    if (!isset($pacientes_por_dia_y_hora[$dia_semana][$hora])) {
+        $pacientes_por_dia_y_hora[$dia_semana][$hora] = [];
     }
+    $pacientes_por_dia_y_hora[$dia_semana][$hora][] = $row;
+}
 
-    list($mes_anterior, $anio_anterior) = obtenerMesAnterior($mes, $anio);
-    list($mes_siguiente, $anio_siguiente) = obtenerMesSiguiente($mes, $anio);
-    ?>
+// Colores por servicio
+$colores_servicio = [
+    'Kinesiología' => '#E2C6C2',
+    'Terapia manual' => '#A6DA9C',
+    'Drenaje Linfático' => '#BBFFFF',
+    'Nutrición' => '#EE976A',
+    'Traumatología' => '#A9B0F4'
+];
+
+function obtenerMesAnterior($mes, $anio) {
+    if ($mes == 1) {
+        return [12, $anio - 1];
+    }
+    return [$mes - 1, $anio];
+}
+
+function obtenerMesSiguiente($mes, $anio) {
+    if ($mes == 12) {
+        return [1, $anio + 1];
+    }
+    return [$mes + 1, $anio];
+}
+
+list($mes_anterior, $anio_anterior) = obtenerMesAnterior($mes, $anio);
+list($mes_siguiente, $anio_siguiente) = obtenerMesSiguiente($mes, $anio);
+?>
 <!DOCTYPE html>
 <html lang="es">
 
