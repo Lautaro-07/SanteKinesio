@@ -1,4 +1,7 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     session_start();
     header('Content-Type: application/json');
@@ -29,9 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Verificar si ya existe un registro con los mismos datos
     $duplicate_query = $conn->prepare("SELECT COUNT(*) AS count FROM turnos WHERE nombre = ? AND telefono = ? AND profesional = ? AND fecha = ? AND hora = ?");
+    if ($duplicate_query === false) {
+        echo json_encode(['success' => false, 'message' => 'Error al preparar la consulta de duplicados: ' . $conn->error]);
+        exit();
+    }
     $duplicate_query->bind_param("sssss", $nombre, $telefono, $profesional, $fecha, $hora);
     $duplicate_query->execute();
     $duplicate_result = $duplicate_query->get_result();
+    if ($duplicate_result === false) {
+        echo json_encode(['success' => false, 'message' => 'Error al obtener el resultado de la consulta de duplicados: ' . $duplicate_query->error]);
+        exit();
+    }
     $duplicate_row = $duplicate_result->fetch_assoc();
 
     if ($duplicate_row['count'] > 0) {
@@ -39,17 +50,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Contar cuántas veces el nombre, el teléfono, el servicio y el profesional han sido registrados
         $count_query = $conn->prepare("SELECT COUNT(*) AS count FROM turnos WHERE nombre = ? AND telefono = ? AND servicio = ? AND profesional = ?");
+        if ($count_query === false) {
+            echo json_encode(['success' => false, 'message' => 'Error al preparar la consulta de conteo: ' . $conn->error]);
+            exit();
+        }
         $count_query->bind_param("ssss", $nombre, $telefono, $servicio, $profesional);
         $count_query->execute();
         $count_result = $count_query->get_result();
+        if ($count_result === false) {
+            echo json_encode(['success' => false, 'message' => 'Error al obtener el resultado de la consulta de conteo: ' . $count_query->error]);
+            exit();
+        }
         $count_row = $count_result->fetch_assoc();
         
         $numero_sesion = $count_row['count'] + 1; // Incrementar el contador para el nuevo registro
         
         $stmt = $conn->prepare("INSERT INTO turnos (servicio, profesional, fecha, hora, nombre, telefono, gmail, obra_social, numero_sesion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt === false) {
+            echo json_encode(['success' => false, 'message' => 'Error al preparar la consulta de inserción: ' . $conn->error]);
+            exit();
+        }
         $stmt->bind_param("sssssssss", $servicio, $profesional, $fecha, $hora, $nombre, $telefono, $gmail, $obra_social, $numero_sesion);
 
         if ($stmt->execute()) {
+            // Enviar correo de confirmación
+            require 'vendor/autoload.php';
+
+            $to_email = $gmail;
+            $subject = 'Confirmación de Turno - Santé Centro De Salud';
+            $body = "¡Hola! Tu turno ha sido confirmado.\nDetalles del turno:\nServicio: $servicio\nProfesional: $profesional\nFecha: $fecha\nHora: $hora\nPor favor, recuerda traer ropa deportiva cómoda para una óptima sesión.";
+            $from_email = 'oligiatielizondo@gmail.com';
+
+            $mensaje_email = "
+            <html>
+            <head>
+                <title>Detalles de tu turno</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        background-color: #f4f4f4;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .email-container {
+                        max-width: 600px;
+                        margin: auto;
+                        background-color: #ffffff;
+                        padding: 20px;
+                        border: 1px solid #dddddd;
+                        border-radius: 10px;
+                    }
+                    .email-header {
+                        text-align: center;
+                        padding-bottom: 20px;
+                    }
+                    .email-header img {
+                        max-width: 100px;
+                    }
+                    .email-body {
+                        padding: 20px;
+                    }
+                    .email-body h2 {
+                        color: #333333;
+                    }
+                    .email-body p {
+                        color: #555555;
+                    }
+                    .email-footer {
+                        text-align: center;
+                        padding-top: 20px;
+                        color: #888888;
+                        font-size: 12px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class='email-container'>
+                    <div class='email-header'>
+                        <img src='cid:logo_img' alt='Santé Centro De Salud'>
+                    </div>
+                    <div class='email-body'>
+                        <h2>¡Turno Confirmado con Éxito!</h2>
+                        <p>Gracias por confiar en Santé Centro De Salud. Aquí están los detalles de tu turno:</p>
+                        <p><strong>Servicio:</strong> $servicio</p>
+                        <p><strong>Profesional:</strong> $profesional</p>
+                        <p><strong>Fecha:</strong> $fecha</p>
+                        <p><strong>Hora:</strong> $hora</p>
+                        <p>Por favor, recuerda traer ropa deportiva cómoda para una óptima sesión.</p>
+                    </div>
+                    <div class='email-footer'>
+                        <p>Santé Centro De Salud</p>
+                        <p>Zapiola 723, Santé Centro De Salud ✨</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            ";
+
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = $from_email;
+                $mail->Password = 'ostc ewyt kjhy firp';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                $mail->setFrom($from_email, 'Santé Centro De Salud');
+                $mail->addAddress($to_email);
+                $mail->Subject = $subject;
+                $mail->Body = $mensaje_email;
+                $mail->isHTML(true);
+                $mail->CharSet = PHPMailer::CHARSET_UTF8;
+
+                $mail->addEmbeddedImage('img/santeLogo.jpg', 'logo_img');
+
+                $mail->send();
+                $message = 'El correo ha sido enviado con éxito.';
+            } catch (Exception $e) {
+                $message = 'El correo no pudo ser enviado. Error: ' . $mail->ErrorInfo;
+            }
+
             echo json_encode(['success' => true, 'message' => 'Paciente registrado con éxito.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Error al registrar el paciente: ' . $stmt->error]);
@@ -223,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
                 <div class="form-group" style="position: relative; bottom: 70px;">
-                    <input type="text"  id="fecha" name="fecha" class="form-control fecha" placeholder="Seleccione la fecha" required>
+                    <input type="text" id="fecha" name="fecha" class="form-control fecha" placeholder="Seleccione la fecha" required>
                 </div>
                 <div class="form-group">
                     <label for="hora">Hora</label>
@@ -273,65 +395,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const agendarOtroPacienteBtn = document.getElementById('agendarOtroPacienteBtn');
             const volverBtn = document.getElementById('volverBtn');
 
-            const disponibilidadProfesionales = {
-                'Kinesiología': {
-                    'Lucia Foricher': {
-                        'Monday': ['08:00', '09:00', '10:00', '11:00'],
-                        'Wednesday': ['08:00', '09:00', '10:00', '11:00'],
-                        'Friday': ['08:00', '09:00', '10:00', '11:00']
-                    },
-                    'Gastón Olgiati': {
-                        'Monday': ['13:00', '14:00', '15:00', '16:00'],
-                        'Wednesday': ['13:00', '14:00', '15:00', '16:00'],
-                        'Friday': ['13:00', '14:00', '15:00', '16:00']
-                    }
-                },
-                'Terapia manual': {
-                    'Mauro Robert': {
-                        'Monday': ['13:00', '14:00', '15:00', '16:00'],
-                        'Tuesday': ['13:00', '14:00', '15:00', '16:00'],
-                        'Wednesday': ['13:00', '14:00', '15:00', '16:00'],
-                        'Thursday': ['13:00', '14:00', '15:00', '16:00'],
-                        'Friday': ['13:00', '14:00', '15:00', '16:00']
-                    },
-                    'German Fernandez': {
-                        'Monday': ['17:30', '18:30', '19:30'],
-                        'Tuesday': ['17:30', '18:30', '19:30'],
-                        'Wednesday': ['17:30', '18:30', '19:30'],
-                        'Thursday': ['17:30', '18:30', '19:30'],
-                        'Friday': ['17:30', '18:30', '19:30']
-                    }
-                },
-                'Drenaje Linfático': {
-                    'Melina Thome': {
-                        'Monday': ['17:00', '18:00', '19:00'],
-                        'Wednesday': ['17:00', '18:00', '19:00'],
-                        'Friday': ['17:00', '18:00', '19:00']
-                    },
-                    'Maria Paz': {
-                        'Wednesday': ['17:00', '18:00', '19:00'],
-                        'Saturday': ['12:00']
-                    }
-                },
-                'Nutrición': {
-                    'Alejandro Perez': {
-                        'Monday': ['08:00', '09:00', '10:00', '11:00'],
-                        'Wednesday': ['08:00', '09:00', '10:00', '11:00'],
-                        'Friday': ['08:00', '09:00', '10:00', '11:00']
-                    }
-                },
-                'Traumatología': {
-                    'Hernán López': {
-                        'Tuesday': ['08:00', '09:00', '10:00', '11:00'],
-                        'Thursday': ['08:00', '09:00', '10:00', '11:00']
-                    }
-                }
+            const todosLosProfesionales = {
+                'Kinesiología': ['Lucia Foricher', 'Gastón Olgiati'],
+                'Terapia manual': ['Mauro Robert', 'German Fernandez'],
+                'Drenaje Linfático': ['Melina Thome', 'Maria Paz'],
+                'Nutrición': ['Alejandro Perez'],
+                'Traumatología': ['Hernán López']
             };
+
+            const todasLasHoras = [
+                '08:00', '09:00', '10:00', '11:00',
+                '13:00', '14:00', '15:00', '16:00',
+                '17:00', '18:00', '19:00', '20:00'
+            ];
 
             function updateProfesionales(servicio) {
                 profesionalSelect.innerHTML = '<option value="">Seleccione un profesional</option>';
-                if (disponibilidadProfesionales[servicio]) {
-                    Object.keys(disponibilidadProfesionales[servicio]).forEach(profesional => {
+                if (todosLosProfesionales[servicio]) {
+                    todosLosProfesionales[servicio].forEach(profesional => {
                         const option = document.createElement('option');
                         option.value = profesional;
                         option.textContent = profesional;
@@ -340,13 +421,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            function updateHorasDisponibles(profesional, fecha) {
-                const diaSemana = new Date(fecha).toLocaleDateString('en-US', { weekday: 'long' });
-                const servicio = servicioSelect.value;
-                const horasDisponibles = disponibilidadProfesionales[servicio]?.[profesional]?.[diaSemana] || [];
-
+            function updateHorasDisponibles() {
                 horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
-                horasDisponibles.forEach(hora => {
+                todasLasHoras.forEach(hora => {
                     const option = document.createElement('option');
                     option.value = hora;
                     option.textContent = hora;
@@ -356,39 +433,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             servicioSelect.addEventListener('change', function() {
                 updateProfesionales(servicioSelect.value);
-                horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
-            });
-
-            profesionalSelect.addEventListener('change', function() {
-                if (fechaInput.value) {
-                    updateHorasDisponibles(profesionalSelect.value, fechaInput.value);
-                }
-            });
-
-            fechaInput.addEventListener('change', function() {
-                if (profesionalSelect.value) {
-                    updateHorasDisponibles(profesionalSelect.value, fechaInput.value);
-                }
+                updateHorasDisponibles();
             });
 
             flatpickr(fechaInput, {
                 altInput: true,
                 altFormat: "F j, Y",
                 dateFormat: "Y-m-d",
-                minDate: "today",
-                disable: [
-                    function(date) {
-                        const diaSemana = date.toLocaleDateString('en-US', { weekday: 'long' });
-                        const servicio = servicioSelect.value;
-                        const profesional = profesionalSelect.value;
-                        return !disponibilidadProfesionales[servicio]?.[profesional]?.[diaSemana];
-                    }
-                ],
-                onChange: function(selectedDates, dateStr, instance) {
-                    if (profesionalSelect.value) {
-                        updateHorasDisponibles(profesionalSelect.value, dateStr);
-                    }
-                }
+                minDate: "today"
             });
 
             form.addEventListener('submit', function(event) {
@@ -398,7 +450,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const data = Object.fromEntries(formData.entries());
 
                 // Enviar datos al servidor para registrar el turno
-                fetch('agendar_paciente.php', {
+                fetch('agendar_paciente_backend.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
