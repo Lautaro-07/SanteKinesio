@@ -8,7 +8,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-// Obtener lista de servicios
 $conn = new mysqli('localhost', 'root', '', 'sante');
 $servicios_result = $conn->query("SELECT servicio, precio FROM precio_servicios");
 $servicios = [];
@@ -17,18 +16,28 @@ while ($row = $servicios_result->fetch_assoc()) {
 }
 $conn->close();
 
-// Inicializar la consulta para obtener pacientes
-$conn = new mysqli('localhost', 'root', '', 'sante'); // Definir la conexión a la base de datos
-$sql = "SELECT * FROM turnos WHERE 1=1";
+// Obtener la semana seleccionada
+$semana = isset($_GET['semana']) ? $_GET['semana'] : 'actual';
+switch ($semana) {
+    case 'anterior':
+        $inicio_semana = (new DateTime())->modify('last week')->format('Y-m-d');
+        $fin_semana = (new DateTime())->modify('last week +6 days')->format('Y-m-d');
+        break;
+    case 'siguiente':
+        $inicio_semana = (new DateTime())->modify('next week')->format('Y-m-d');
+        $fin_semana = (new DateTime())->modify('next week +6 days')->format('Y-m-d');
+        break;
+    case 'actual':
+    default:
+        $inicio_semana = (new DateTime())->modify('this week')->format('Y-m-d');
+        $fin_semana = (new DateTime())->modify('this week +6 days')->format('Y-m-d');
+}
 
-// Filtrar por la semana actual
-$inicio_semana = (new DateTime())->modify('this week')->format('Y-m-d');
-$fin_semana = (new DateTime())->modify('this week +6 days')->format('Y-m-d');
-$sql .= " AND fecha BETWEEN ? AND ?";
+$conn = new mysqli('localhost', 'root', '', 'sante');
+$sql = "SELECT * FROM turnos WHERE fecha BETWEEN ? AND ? ORDER BY fecha";
 $params = [$inicio_semana, $fin_semana];
 $param_types = 'ss';
 
-$sql .= " ORDER BY fecha";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Error al preparar la consulta: " . $conn->error);
@@ -37,140 +46,46 @@ $stmt->bind_param($param_types, ...$params);
 $stmt->execute();
 $pacientes = $stmt->get_result();
 
-// Verificar si la consulta fue exitosa
 if ($pacientes === false) {
     echo "Error al obtener los pacientes: " . $conn->error;
     exit();
 }
 
-// Obtener lista de profesionales
 $profesionales_result = $conn->query("SELECT DISTINCT profesional FROM turnos");
 $profesionales = [];
 while ($row = $profesionales_result->fetch_assoc()) {
     $profesionales[] = $row['profesional'];
 }
 
-// Mapear días de la semana
-$dias_semana = [
-    1 => 'Monday',
-    2 => 'Tuesday',
-    3 => 'Wednesday',
-    4 => 'Thursday',
-    5 => 'Friday'
-];
-
-$dias_semana_espanol = [
-    'Monday' => 'Lunes',
-    'Tuesday' => 'Martes',
-    'Wednesday' => 'Miércoles',
-    'Thursday' => 'Jueves',
-    'Friday' => 'Viernes'
-];
-
-// Agrupar pacientes por día de la semana
-$pacientes_por_dia = [];
-$pacientes_por_hora = [];
+$pacientes_por_profesional = [];
 while ($row = $pacientes->fetch_assoc()) {
-    $dia_semana = date('N', strtotime($row['fecha'])); // 1 (para lunes) a 7 (para domingo)
-    $hora = date('H:i', strtotime($row['hora']));
-    if (!isset($pacientes_por_dia[$dia_semana])) {
-        $pacientes_por_dia[$dia_semana] = [];
+    $profesional = $row['profesional'];
+    if (!isset($pacientes_por_profesional[$profesional])) {
+        $pacientes_por_profesional[$profesional] = [];
     }
-    if (!isset($pacientes_por_hora[$dia_semana])) {
-        $pacientes_por_hora[$dia_semana] = [];
-    }
-    $pacientes_por_dia[$dia_semana][] = $row;
-    if (!isset($pacientes_por_hora[$dia_semana][$hora])) {
-        $pacientes_por_hora[$dia_semana][$hora] = [];
-    }
-    $pacientes_por_hora[$dia_semana][$hora][] = $row;
-}
-
-// Obtener disponibilidad de horarios y filtrar los horarios ocupados por los pacientes
-$disponibilidadProfesionales = [
-    'Lucia Foricher' => [
-        'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-        'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-        'Friday' => ['08:00', '09:00', '10:00', '11:00'],
-    ],
-    'Mauro Robert' => [
-        'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-        'Tuesday' => ['13:00', '14:00', '15:00', '16:00'],
-        'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-        'Thursday' => ['13:00', '14:00', '15:00', '16:00'],
-        'Friday' => ['13:00', '14:00', '15:00', '16:00']
-    ],
-    'German Fernandez' => [
-        'Monday' => ['17:30', '18:30', '19:30'],
-        'Tuesday' => ['17:30', '18:30', '19:30'],
-        'Wednesday' => ['17:30', '18:30', '19:30'],
-        'Thursday' => ['17:30', '18:30', '19:30'],
-        'Friday' => ['17:30', '18:30', '19:30']
-    ],
-    'Gastón Olgiati' => [
-        'Monday' => ['13:00', '14:00', '15:00', '16:00'],
-        'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
-        'Friday' => ['13:00', '14:00', '15:00', '16:00']
-    ],
-    'Hernán López' => [
-        'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-        'Thursday' => ['08:00', '09:00', '10:00', '11:00']
-    ],
-    'Alejandro Perez' => [
-        'Monday' => ['08:00', '09:00', '10:00', '11:00'],
-        'Wednesday' => ['08:00', '09:00', '10:00', '11:00'],
-        'Friday' => ['08:00', '09:00', '10:00', '11:00']
-    ],
-    'Melina Thome' => [
-        'Monday' => ['17:00', '18:00', '19:00'],
-        'Wednesday' => ['17:00', '18:00', '19:00'],
-        'Friday' => ['17:00', '18:00', '19:00']
-    ],
-    'Maria Paz' => [
-        'Wednesday' => ['17:00', '18:00', '19:00'],
-        'Saturday' => ['12:00']
-    ],
-    'Miriam Rossello' => [
-        'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-        'Thursday' => ['08:00', '09:00', '10:00', '11:00']
-    ],
-    'Florencia Goñi' => [
-        'Monday' => ['17:00', '18:00'],
-        'Tuesday' => ['17:00', '18:00'],
-        'Thursday' => ['17:00']
-    ],
-    'Constanza Marinello' => [
-        'Monday' => ['15:00'],
-        'Tuesday' => ['16:00', '17:00'],
-        'Thursday' => ['13:00', '14:00', '15:00'],
-        'Friday' => ['15:00', '16:00']
-    ],
-    'Mariana' => [
-        'Thursday' => ['09:30', '10:30'],
-        'Friday' => ['08:30', '09:30', '10:30']
-    ]
-];
-
-// Filtrar los horarios ocupados por los pacientes y aplicar la lógica para kinesiología
-$horarios_ocupados = [];
-foreach ($disponibilidadProfesionales as $profesional => &$horariosDia) {
-    foreach ($horariosDia as $dia => &$horarios) {
-        foreach ($horarios as $key => $hora) {
-            $dia_num = array_search($dia, array_keys($dias_semana)) + 1;
-            if (isset($pacientes_por_hora[$dia_num][$hora])) {
-                $horarios_ocupados[$dia][$hora] = true;
-                unset($horarios[$key]);
-            }
-        }
-    }
+    $pacientes_por_profesional[$profesional][] = $row;
 }
 
 $colores_servicio = [
     'Kinesiología' => '#E2C6C2',
-    'Terapia manual' => '#A6DA9C',
+    'Terapia Manual - RPG' => '#A6DA9C',
     'Drenaje Linfático' => '#BBFFFF',
     'Nutrición' => '#EE976A',
     'Traumatología' => '#A9B0F4'
+];
+
+$profesionales_info = [
+    'Lucia Foricher' => 'lucia.jpg',
+    'Hernan Lopez' => 'hernan.jpg',
+    'Alejandro Perez Etcheber' => 'alejandro.jpg',
+    'Melina Thome' => 'melina.jpg',
+    'Dr. Mauro Robert' => 'mauro.jpg',
+    'Gastón Olgiati' => 'gastonO.jpg',
+    'Maria Paz' => 'maria.jpg',
+    'Dr. German Fernandez' => 'german.jpg',
+    'Dra. Mariana Ilari' => 'mariana.jpg',
+    'Constanza Marinello' => 'constanza.jpg',
+    'Florencia Goñi' => 'florencia.jpg',
 ];
 ?>
 <!DOCTYPE html>
@@ -220,7 +135,7 @@ $colores_servicio = [
         }
 
         .profesional {
-            background-color: white;
+            background-color:rgb(241, 235, 235);
             padding: 20px;
             border-radius: 10px;
             text-align: center;
@@ -252,6 +167,7 @@ $colores_servicio = [
             border-collapse: collapse;
             background-color: #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            
         }
 
         th, td {
@@ -478,21 +394,7 @@ $colores_servicio = [
 
     <section class="profesionales_container">
         <?php
-        $profesionales = [
-            'Lucia Foricher' => 'lucia.jpg',
-            'Hernan Lopez' => 'hernan.jpg',
-            'Alejandro Perez Etcheber' => 'alejandro.jpg',
-            'Melina Thome' => 'melina.jpg',
-            'Dr. Mauro Robert' => 'mauro.jpg',
-            'Gastón Olgiati' => 'gastonO.jpg',
-            'Maria Paz' => 'maria.jpg',
-            'Dr. German Fernandez' => 'german.jpg',
-            'Dra. Mariana Ilari' => 'mariana.jpg',
-            'Constanza Marinello' => 'constanza.jpg',
-            'Florencia Goñi' => 'florencia.jpg',
-        ];
-
-        foreach ($profesionales as $nombre => $imagen) {
+        foreach ($profesionales_info as $nombre => $imagen) {
         ?>
         <div class="profesional">
             <div class="imgProfesional">
@@ -513,18 +415,15 @@ $colores_servicio = [
                         <tr>
                             <td>
                                 <?php
-                                foreach ($dias_semana as $dia_num => $dia) {
-                                    if (isset($pacientes_por_hora[$dia_num])) {
-                                        foreach ($pacientes_por_hora[$dia_num] as $hora => $pacientes) {
-                                            foreach ($pacientes as $paciente) {
-                                                if ($paciente['profesional'] == $nombre) {
-                                                    echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\">";
-                                                    echo "<p><strong>{$paciente['nombre']}</strong></p>";
-                                                    echo "</div>";
-                                                }
-                                            }
-                                        }
+                                if (isset($pacientes_por_profesional[$nombre])) {
+                                    foreach ($pacientes_por_profesional[$nombre] as $paciente) {
+                                        echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\">";
+                                        echo "<p><strong>{$paciente['nombre']}</strong></p>";
+                                        echo "<p>{$paciente['fecha']} {$paciente['hora']}</p>";
+                                        echo "</div>";
                                     }
+                                } else {
+                                    echo "<p>No hay pacientes registrados para este profesional.</p>";
                                 }
                                 ?>
                             </td>
