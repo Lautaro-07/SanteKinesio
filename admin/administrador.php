@@ -17,40 +17,23 @@ while ($row = $servicios_result->fetch_assoc()) {
 }
 $conn->close();
 
-// Variables para búsqueda
-$busqueda_nombre = isset($_GET['nombre']) ? $_GET['nombre'] : '';
-$busqueda_profesional = isset($_GET['busqueda_profesional']) ? $_GET['busqueda_profesional'] : '';
-
 // Inicializar la consulta para obtener pacientes
 $conn = new mysqli('localhost', 'root', '', 'sante'); // Definir la conexión a la base de datos
 $sql = "SELECT * FROM turnos WHERE 1=1";
-$params = [];
-$param_types = '';
 
-// Agregar filtros de búsqueda por nombre y profesional
-if ($busqueda_nombre != '') {
-    $sql .= " AND nombre LIKE ?";
-    $params[] = "%$busqueda_nombre%";
-    $param_types .= 's';
-}
-
-if ($busqueda_profesional != '') {
-    $sql .= " AND profesional = ?";
-    $params[] = $busqueda_profesional;
-    $param_types .= 's';
-}
-
-// Filtrar por el mes actual
-$sql .= " AND MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())";
+// Filtrar por la semana actual
+$inicio_semana = (new DateTime())->modify('this week')->format('Y-m-d');
+$fin_semana = (new DateTime())->modify('this week +6 days')->format('Y-m-d');
+$sql .= " AND fecha BETWEEN ? AND ?";
+$params = [$inicio_semana, $fin_semana];
+$param_types = 'ss';
 
 $sql .= " ORDER BY fecha";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Error al preparar la consulta: " . $conn->error);
 }
-if (!empty($params)) {
-    $stmt->bind_param($param_types, ...$params);
-}
+$stmt->bind_param($param_types, ...$params);
 $stmt->execute();
 $pacientes = $stmt->get_result();
 
@@ -147,16 +130,16 @@ $disponibilidadProfesionales = [
         'Wednesday' => ['17:00', '18:00', '19:00'],
         'Saturday' => ['12:00']
     ],
-    'Miriam' => [
+    'Miriam Rossello' => [
         'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
         'Thursday' => ['08:00', '09:00', '10:00', '11:00']
     ],
-    'Florencia' => [
+    'Florencia Goñi' => [
         'Monday' => ['17:00', '18:00'],
         'Tuesday' => ['17:00', '18:00'],
         'Thursday' => ['17:00']
     ],
-    'Constanza' => [
+    'Constanza Marinello' => [
         'Monday' => ['15:00'],
         'Tuesday' => ['16:00', '17:00'],
         'Thursday' => ['13:00', '14:00', '15:00'],
@@ -170,8 +153,8 @@ $disponibilidadProfesionales = [
 
 // Filtrar los horarios ocupados por los pacientes y aplicar la lógica para kinesiología
 $horarios_ocupados = [];
-if ($busqueda_profesional != '' && isset($disponibilidadProfesionales[$busqueda_profesional])) {
-    foreach ($disponibilidadProfesionales[$busqueda_profesional] as $dia => &$horarios) {
+foreach ($disponibilidadProfesionales as $profesional => &$horariosDia) {
+    foreach ($horariosDia as $dia => &$horarios) {
         foreach ($horarios as $key => $hora) {
             $dia_num = array_search($dia, array_keys($dias_semana)) + 1;
             if (isset($pacientes_por_hora[$dia_num][$hora])) {
@@ -180,7 +163,7 @@ if ($busqueda_profesional != '' && isset($disponibilidadProfesionales[$busqueda_
             }
         }
     }
-};
+}
 
 $colores_servicio = [
     'Kinesiología' => '#E2C6C2',
@@ -189,7 +172,6 @@ $colores_servicio = [
     'Nutrición' => '#EE976A',
     'Traumatología' => '#A9B0F4'
 ];
-
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -205,7 +187,7 @@ $colores_servicio = [
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
     <link rel="icon" href="../img/santeLogo.jpg">
-    <title>Sante - Pacientes</title>
+    <title>Sante - Administrador</title>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -217,7 +199,7 @@ $colores_servicio = [
         }
 
         h1, h2 {
-            color:#96B394;
+            color: #96B394;
             text-align: center;
         }
 
@@ -226,6 +208,38 @@ $colores_servicio = [
             margin: auto;
             width: 90%;
             max-width: 1200px;
+        }
+
+        .profesionales_container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            position: relative;
+            top: 20px;
+        }
+
+        .profesional {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .imgProfesional img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .profesionalTexto span {
+            display: block;
+            font-weight: bold;
+            color: #96B394;
         }
 
         .table-container {
@@ -244,47 +258,41 @@ $colores_servicio = [
             text-align: center;
             padding: 10px;
             border: 1px solid #ddd;
-            vertical-align: top; /* Asegura que el contenido se muestre en la parte superior */
         }
 
         th {
             background-color: #F6EBD5;
-            color:rgb(31, 31, 31);
+            color: #333;
         }
 
         .patient-card {
-            background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 5px;
-            padding: 10px;
-            margin: 5px auto;
+            padding: 5px;
+            margin: 5px;
             text-align: center;
             cursor: pointer;
             transition: background-color 0.3s ease;
             display: inline-block;
-            min-width: 110px;
-        }
-        .patient-card.yellow {
-            background-color: yellow;
+            width: 130px;
+            border-radius: 10px;
+            background-color: #f4f4f4; /* Color de fondo por defecto */
         }
 
         .patient-card:hover {
             background-color: #e0e0e0;
         }
 
-        .highlight {
-            background-color: yellow;
-        }
-
         .button-container {
             display: flex;
-            justify-content: space-between;
+            justify-content: start;
+            align-items: start;
             margin-top: 20px;
+            width: 50%;
         }
 
         .button-container form {
             flex-grow: 1;
-            text-align: center;
         }
 
         .button-container button {
@@ -298,11 +306,11 @@ $colores_servicio = [
         }
 
         .button-container button:hover {
-            background-color: #96B394;
+            background-color: #7d9a7d;
         }
 
         .navbar-collapse {
-            justify-content: flex-end; /* Asegura que los enlaces se alineen a la derecha */
+            justify-content: flex-end;
         }
 
         .navbar-nav {
@@ -312,41 +320,52 @@ $colores_servicio = [
             gap: 15px;
         }
 
-        .btn_horarios {
+        .agendar_link {
             background-color: #96B394;
-            color: white;
+            color: white !important;
             border: none;
             padding: 8px;
             cursor: pointer;
             border-radius: 10px !important;
         }
 
-        .btn_horarios:hover {
+        .btn_horarios button {
+            background-color: #96B394;
+            color: white;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 10px !important;
+            position: relative;
+            top: 8px;
+        }
+
+        .btn_horarios button:hover {
             background-color: rgb(113, 139, 111);
         }
 
-        /* Asegurar que el navbar siempre se muestre en pantallas grandes */
         @media (max-width: 992px) {
             .ul_container {
                 display: flex !important;
                 flex-direction: column !important;
                 width: 100% !important;
-                align-items: flex-start; /* Alinea los elementos a la derecha */
-                margin-top: 10px; /* Agrega un pequeño espacio debajo del navbar */
+                align-items: flex-start;
+                margin-top: 10px;
             }
 
-            .btn_horarios {
-                position: relative; 
+            .btn_horarios button {
                 background-color: #F6EBD5;
-                width: 200px;
+                color: white;
+                border: none;
                 padding: 8px;
+                cursor: pointer;
+                width: 200px;
+                margin: 0px;
                 border-radius: 10px !important;
-                color: #fff !important;
-                text-align: center;
             }
 
             .agendar_link {
-                position: relative; 
+                position: relative;
                 background-color: #F6EBD5;
                 width: 200px;
                 padding: 8px;
@@ -354,6 +373,50 @@ $colores_servicio = [
                 color: #fff !important;
                 text-align: center;
             }
+
+            .search-container button {
+                background-color: #96B394;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                position: relative;
+                left: 0px;
+                top: 10px;
+                width: 100px;
+                cursor: pointer;
+            }
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .search-container input {
+            width: 45%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .search-container button {
+            background-color: #96B394;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            position: relative;
+            left: 5px;
+            width: 100px;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #7d9a7d;
         }
     </style>
     <script>
@@ -365,31 +428,17 @@ $colores_servicio = [
         }
 
         function fetchPacientes(profesional) {
-            var rows = document.querySelectorAll('.patient-card');
+            // Mostrar todos los horarios y pacientes del profesional seleccionado
+            var rows = document.querySelectorAll('.profesional');
             rows.forEach(function(row) {
-                if (profesional === "" || row.getAttribute('data-profesional') === profesional) {
-                    row.style.display = 'inline-block';
-                } else {
-                    row.style.display = 'none';
-                }
+                row.style.display = 'none';
             });
+            var selectedProf = document.querySelector('.profesional[data-profesional="' + profesional + '"]');
+            selectedProf.style.display = 'block';
 
-            var horarios = document.querySelectorAll('.horarios-disponibles div, .horarios-ocupados div');
-            horarios.forEach(function(div) {
-                if (profesional === "" || div.getAttribute('data-profesional') === profesional) {
-                    div.style.display = 'block';
-                } else {
-                    div.style.display = 'none';
-                }
-            });
-            
             // Actualizar el encabezado de horarios disponibles
             var header = document.getElementById('horarios-header');
-            if (profesional === "") {
-                header.innerText = "Horarios Disponibles";
-            } else {
-                header.innerText = "Horarios de " + profesional;
-            }
+            header.innerText = "Horarios de " + profesional;
         }
     </script>
 </head>
@@ -422,95 +471,55 @@ $colores_servicio = [
 <div class="content" style="color: #000 !important;">
     <h1 style="font-weight: 600; letter-spacing: 10px;">Bienvenido</h1>
     <hr>
-    
-    <form method="GET" action="administrador.php">
-        <input type="text" id="nombre" name="nombre" placeholder="Buscar por nombre" value="<?php echo $busqueda_nombre; ?>">
-        <select id="busqueda_profesional" name="busqueda_profesional" onchange="fetchPacientes(this.value)">
-            <option value="">-- Todos los Profesionales --</option>
-            <?php foreach ($profesionales as $prof): ?>
-                <option value="<?php echo $prof; ?>" <?php if ($busqueda_profesional == $prof) echo 'selected'; ?>>
-                    <?php echo $prof; ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <button class="btn_horarios" type="submit">Buscar</button>
-    </form>
 
-    <div class="table-container" id="pacientes-table">
-        <table>
-            <thead>
-                <tr>
-                    <th id="horarios-header">Horarios Disponibles</th>
-                    <th>Horarios Ocupados</th>
-                    <th>Lunes</th>
-                    <th>Martes</th>
-                    <th>Miércoles</th>
-                    <th>Jueves</th>
-                    <th>Viernes</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="horarios-disponibles">
-                        <?php if (isset($disponibilidadProfesionales[$busqueda_profesional])): ?>
-                            <?php foreach ($disponibilidadProfesionales[$busqueda_profesional] as $dia => $horarios): ?>
-                                <div data-profesional="<?php echo $busqueda_profesional; ?>">
-                                    <strong><?php echo $dias_semana_espanol[$dia]; ?></strong>
-                                    <ul>
-                                        <?php foreach ($horarios as $horario): ?>
-                                            <?php
-                                            $dia_num = array_search($dia, array_keys($dias_semana)) + 1;
-                                            $hora_ocupada = false;
-
-                                            // Verificar si el horario está ocupado
-                                            if (isset($pacientes_por_hora[$dia_num][$horario])) {
-                                                $hora_ocupada = true;
+    <div class="profesionales_container">
+        <?php foreach ($profesionales as $prof): ?>
+            <div class="profesional" data-profesional="<?php echo $prof; ?>" onclick="fetchPacientes('<?php echo $prof; ?>')">
+                <div class="imgProfesional">
+                    <img src="../img/<?php echo strtolower(str_replace(' ', '', $prof)); ?>.jpg" alt="<?php echo $prof; ?>">
+                </div>
+                <div class="profesionalTexto">
+                    <span><?php echo $prof; ?></span>
+                    <p><?php echo $prof; ?></p>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Pacientes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            foreach ($dias_semana as $dia_num => $dia) {
+                                if (isset($pacientes_por_hora[$dia_num])) {
+                                    foreach ($pacientes_por_hora[$dia_num] as $hora => $pacientes) {
+                                        echo "<tr>";
+                                        echo "<td>$hora</td>";
+                                        echo "<td>";
+                                        foreach ($pacientes as $paciente) {
+                                            if ($paciente['profesional'] == $prof) {
+                                                echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\">";
+                                                echo "<p><strong>{$paciente['nombre']}</strong></p>";
+                                                echo "<form method=\"POST\" action=\"administrador.php?id={$paciente['id']}\">";
+                                                echo "<input type=\"hidden\" name=\"asistencia_id\" value=\"{$paciente['id']}\">";
+                                                echo "<input type=\"checkbox\" name=\"asistio\" ".($paciente['asistio'] ? 'checked' : '')." onchange=\"this.form.submit()\">";
+                                                echo "</form>";
+                                                echo "</div>";
                                             }
-                                            ?>
-                                            <?php if (!$hora_ocupada): ?>
-                                                <li><?php echo $horario; ?></li>
-                                            <?php endif; ?>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p>Seleccione un profesional para ver los horarios disponibles.</p>
-                        <?php endif; ?>
-                    </td>
-                    <td class="horarios-ocupados">
-                        <?php if (isset($pacientes_por_hora)): ?>
-                            <?php foreach ($pacientes_por_hora as $dia_num => $horas): ?>
-                                <div data-profesional="<?php echo $busqueda_profesional; ?>">
-                                    <strong><?php echo $dias_semana_espanol[$dias_semana[$dia_num]]; ?></strong>
-                                    <ul>
-                                        <?php foreach ($horas as $hora => $pacientes): ?>
-                                            <li><?php echo $hora; ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p>No hay horarios ocupados.</p>
-                        <?php endif; ?>
-                    </td>
-                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                        <td>
-                            <?php if (isset($pacientes_por_dia[$i])): ?>
-                                <?php foreach ($pacientes_por_dia[$i] as $paciente): ?>
-                                    <div class="patient-card" style="background-color: <?php echo $colores_servicio[$paciente['servicio']] ?? '#FFFFFF'; ?>;" onclick="location.href='diagnostico.php?id=<?php echo $paciente['id']; ?>'">
-                                        <p><strong><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
-                                        <p><?php echo htmlspecialchars($paciente['fecha']); ?></p>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <p>No hay pacientes programados.</p>
-                            <?php endif; ?>
-                        </td>
-                    <?php endfor; ?>
-                </tr>
-            </tbody>
-        </table>
+                                        }
+                                        echo "</td>";
+                                        echo "</tr>";
+                                    }
+                                }
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 
     <div id="modificar-precio" style="display:none" class="button-container">
