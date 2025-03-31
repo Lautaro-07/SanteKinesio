@@ -88,6 +88,7 @@ $profesionales_info = [
     'Florencia Goñi' => 'florencia.jpg',
 ];
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -135,7 +136,7 @@ $profesionales_info = [
         }
 
         .profesional {
-            background-color:rgb(241, 235, 235);
+            background-color:rgb(235, 230, 230);
             padding: 20px;
             border-radius: 10px;
             text-align: center;
@@ -167,7 +168,6 @@ $profesionales_info = [
             border-collapse: collapse;
             background-color: #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            
         }
 
         th, td {
@@ -191,6 +191,7 @@ $profesionales_info = [
             width: 90px;
             font-size: 12px;
             background-color: #f4f4f4; /* Color de fondo por defecto */
+            cursor: pointer; /* Añadido para indicar que es clickeable */
         }
 
         .patient-card div {
@@ -221,14 +222,14 @@ $profesionales_info = [
             flex-grow: 1;
         }
 
-        .button-container button {
+        .btn_horarios {
             background-color: #96B394;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 9px 10px;
             border-radius: 5px;
             cursor: pointer;
-            margin: 5px;
+            margin: 0px;
         }
 
         .button-container button:hover {
@@ -358,29 +359,29 @@ $profesionales_info = [
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-                <ul class="ul_container navbar-nav ms-auto"> <!-- ms-auto empuja los elementos a la derecha -->
+                <ul class="ul_container navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="btn_horarios nav_link nav-link" style="color: #fff;" href="agendar_paciente.php">Agendar Paciente</a>
                     </li>
                     <li class="nav-item">
-                        <button class="btn_horarios" onclick="document.getElementById('modificar-precio').style.display='block'">Modificar Precio</button>                    
+                        <button class="btn_horarios" onclick="document.getElementById('modificar-precio').style.display='block'">Modificar Precio</button>
                     </li>
                     <li class="nav-item">
                         <form method="GET" action="administrador.php">
                             <input type="hidden" name="semana" value="anterior">
-                            <button type="submit">Semana Anterior</button>
+                            <button class="btn_horarios" type="submit">Semana Anterior</button>
                         </form>
                     </li>
                     <li class="nav-item">
                         <form method="GET" action="administrador.php">
                             <input type="hidden" name="semana" value="actual">
-                            <button type="submit">Semana Actual</button>
+                            <button class="btn_horarios" type="submit">Semana Actual</button>
                         </form>
                     </li>
                     <li class="nav-item">
                         <form method="GET" action="administrador.php">
                             <input type="hidden" name="semana" value="siguiente">
-                            <button type="submit">Semana Siguiente</button>
+                            <button class="btn_horarios" type="submit">Semana Siguiente</button>
                         </form>
                     </li>
                 </ul>
@@ -396,7 +397,7 @@ $profesionales_info = [
         <?php
         foreach ($profesionales_info as $nombre => $imagen) {
         ?>
-        <div class="profesional">
+        <div class="profesional" onclick="mostrarPacientesProfesional('<?php echo $nombre; ?>')">
             <div class="imgProfesional">
                 <img src="../img/<?php echo $imagen; ?>" alt="<?php echo $nombre; ?>">
             </div>
@@ -417,7 +418,7 @@ $profesionales_info = [
                                 <?php
                                 if (isset($pacientes_por_profesional[$nombre])) {
                                     foreach ($pacientes_por_profesional[$nombre] as $paciente) {
-                                        echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\">";
+                                        echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\" onclick=\"redirigirDiagnostico({$paciente['id']})\">";
                                         echo "<p><strong>{$paciente['nombre']}</strong></p>";
                                         echo "<p>{$paciente['fecha']} {$paciente['hora']}</p>";
                                         echo "</div>";
@@ -453,5 +454,26 @@ $profesionales_info = [
         </form>
     </div>
 </div>
+
+<script>
+    function redirigirDiagnostico(id) {
+        window.location.href = 'diagnostico.php?id=' + id;
+    }
+
+    function mostrarPacientesProfesional(profesional) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'profesional_pacientes.php';
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'profesional';
+        input.value = profesional;
+        form.appendChild(input);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
 </body>
 </html>
