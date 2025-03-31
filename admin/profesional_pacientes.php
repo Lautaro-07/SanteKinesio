@@ -1,6 +1,6 @@
 <?php
 session_start([
-    'cookie_lifetime' => 0, // La sesión se cierra cuando se cierra el navegador
+    'cookie_lifetime' => 0,
 ]);
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -8,21 +8,29 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-if (!isset($_POST['profesional'])) {
+if (!isset($_POST['profesional']) && !isset($_GET['profesional'])) {
     echo "Profesional no especificado.";
     exit();
 }
 
-$profesional = $_POST['profesional'];
+$profesional = isset($_POST['profesional']) ? $_POST['profesional'] : $_GET['profesional'];
 
 $conn = new mysqli('localhost', 'root', '', 'sante');
 if ($conn->connect_error) {
     die("Conexión fallida: " . $conn->connect_error);
 }
 
-$sql = "SELECT * FROM turnos WHERE profesional = ? ORDER BY fecha, hora";
+// Obtener el mes y el año actual
+$mes_actual = date('m');
+$anio_actual = date('Y');
+
+// Obtener el mes y el año seleccionados
+$mes = isset($_GET['mes']) ? $_GET['mes'] : $mes_actual;
+$anio = isset($_GET['anio']) ? $_GET['anio'] : $anio_actual;
+
+$sql = "SELECT * FROM turnos WHERE profesional = ? AND MONTH(fecha) = ? AND YEAR(fecha) = ? ORDER BY fecha, hora";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('s', $profesional);
+$stmt->bind_param('sii', $profesional, $mes, $anio);
 $stmt->execute();
 $pacientes = $stmt->get_result();
 
@@ -53,7 +61,62 @@ $dias_semana = [
     0 => 'Domingo'
 ];
 
+// Colores por servicio
+$colores_servicio = [
+    'Kinesiología' => '#E2C6C2',
+    'Terapia manual' => '#A6DA9C',
+    'Drenaje Linfático' => '#BBFFFF',
+    'Nutrición' => '#EE976A',
+    'Traumatología' => '#A9B0F4'
+];
+
+// Funciones para obtener el mes anterior y siguiente
+function obtenerMesAnterior($mes, $anio) {
+    if ($mes == 1) {
+        return [12, $anio - 1];
+    }
+    return [$mes - 1, $anio];
+}
+
+function obtenerMesSiguiente($mes, $anio) {
+    if ($mes == 12) {
+        return [1, $anio + 1];
+    }
+    return [$mes + 1, $anio];
+}
+
+list($mes_anterior, $anio_anterior) = obtenerMesAnterior($mes, $anio);
+list($mes_siguiente, $anio_siguiente) = obtenerMesSiguiente($mes, $anio);
+
 $conn->close();
+
+// Función para traducir días de la semana al español
+function traducirDia($diaIngles) {
+    $traducciones = [
+        'Monday' => 'Lunes',
+        'Tuesday' => 'Martes',
+        'Wednesday' => 'Miércoles',
+        'Thursday' => 'Jueves',
+        'Friday' => 'Viernes',
+        'Saturday' => 'Sábado',
+        'Sunday' => 'Domingo'
+    ];
+    return isset($traducciones[$diaIngles]) ? $traducciones[$diaIngles] : $diaIngles;
+}
+
+// Obtener horarios disponibles y ocupados
+$horariosDisponibles = [];
+$horariosOcupados = [];
+
+foreach ($disponibilidad as $dia => $horas) {
+    foreach ($horas as $hora) {
+        if (!isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
+            $horariosDisponibles[] = traducirDia($dia) . ' ' . $hora;
+        } else {
+            $horariosOcupados[] = traducirDia($dia) . ' ' . $hora;
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -116,7 +179,7 @@ $conn->close();
             color: #333;
         }
 
-        .patient-card {
+        .patient-card, .available-card {
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 5px;
@@ -125,11 +188,18 @@ $conn->close();
             display: inline-block;
             width: 90px;
             font-size: 12px;
-            background-color: #f4f4f4; /* Color de fondo por defecto */
             cursor: pointer; /* Añadido para indicar que es clickeable */
         }
 
-        .patient-card div {
+        .patient-card {
+            background-color: #f4f4f4; /* Color de fondo por defecto */
+        }
+
+        .available-card {
+            background-color: #d4edda; /* Color de fondo para disponible */
+        }
+
+        .patient-card div, .available-card div {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -137,7 +207,7 @@ $conn->close();
             margin: auto;
         }
 
-        .patient-card div p {
+        .patient-card div p, .available-card div p {
             margin: 0;
             flex: 1;
             width: 100%;
@@ -280,6 +350,105 @@ $conn->close();
         .search-container button:hover {
             background-color: #7d9a7d;
         }
+
+        /* Estilo para la tarjeta del formulario de agregar paciente */
+        .card {
+            width: 50%;
+            margin: auto;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+            position: absolute;
+            display: none;
+        }
+
+        .card-header {
+            background-color: #96B394;
+            color: white;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .form-group button {
+            background-color: #96B394;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .form-group button:hover {
+            background-color: #7d9a7d;
+        }
+
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .success-message {
+            color: green;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .confirmation-card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .confirmation-card h2 {
+            color: #96B394;
+            margin-bottom: 20px;
+        }
+
+        .confirmation-card button {
+            background-color: #96B394;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .confirmation-card button:hover {
+            background-color: #7d9a7d;
+        }
     </style>
 </head>
 <body>
@@ -310,6 +479,28 @@ $conn->close();
 </header>
 <div class="content" style="color: #000 !important;">
     <h1>Pacientes de <?php echo htmlspecialchars($profesional); ?></h1>
+
+    <div class="button-container">
+        <form method="GET" action="profesional_pacientes.php">
+            <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
+            <input type="hidden" name="mes" value="<?php echo $mes_anterior; ?>">
+            <input type="hidden" name="anio" value="<?php echo $anio_anterior; ?>">
+            <button type="submit">Mes Anterior</button>
+        </form>
+        <form method="GET" action="profesional_pacientes.php">
+            <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
+            <input type="hidden" name="mes" value="<?php echo $mes_actual; ?>">
+            <input type="hidden" name="anio" value="<?php echo $anio_actual; ?>">
+            <button type="submit">Mes Actual</button>
+        </form>
+        <form method="GET" action="profesional_pacientes.php">
+            <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
+            <input type="hidden" name="mes" value="<?php echo $mes_siguiente; ?>">
+            <input type="hidden" name="anio" value="<?php echo $anio_siguiente; ?>">
+            <button type="submit">Mes Siguiente</button>
+        </form>
+    </div>
+
     <div class="table-container">
         <table>
             <thead>
@@ -318,14 +509,16 @@ $conn->close();
                     <?php foreach ($dias_semana as $dia) : ?>
                         <th><?php echo $dia; ?></th>
                     <?php endforeach; ?>
+                    <th>Horarios Disponibles</th>
+                    <th>Horarios Ocupados</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
                 // Obtener todas las horas únicas incluyendo las de disponibilidad
                 $horasUnicas = [];
-                if (isset($disponibilidad[$profesional])) {
-                    foreach ($disponibilidad[$profesional] as $dia => $horas) {
+                if (isset($disponibilidad)) {
+                    foreach ($disponibilidad as $dia => $horas) {
                         foreach ($horas as $hora) {
                             if (!in_array($hora, $horasUnicas)) {
                                 $horasUnicas[] = $hora;
@@ -370,8 +563,8 @@ $conn->close();
                         ?>
                         <!-- Mostrar horas disponibles -->
                         <?php
-                        if (isset($disponibilidad[$dia][$hora])) {
-                            echo "<p>Disponible</p>";
+                        if (isset($disponibilidad[$dia_num]) && in_array($hora, $disponibilidad[$dia_num])) {
+                            echo "<div class='available-card'><p>Disponible</p></div>";
                         } else {
                             echo "<p>-</p>";
                         }
@@ -379,10 +572,97 @@ $conn->close();
                         <?php endif; ?>
                     </td>
                     <?php endforeach; ?>
+                    <td>
+                        <?php
+                        // Mostrar horarios disponibles
+                        $horarios_disponibles = [];
+                        foreach ($disponibilidad as $dia => $horas) {
+                            if (in_array($hora, $horas) && !isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
+                                $horarios_disponibles[] = traducirDia($dia) . ' ' . $hora;
+                            }
+                        }
+                        echo implode(', ', $horarios_disponibles);
+                        ?>
+                    </td>
+                    <td>
+                        <?php
+                        // Mostrar horarios ocupados
+                        $horarios_ocupados = [];
+                        foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
+                            if (isset($horas[$hora])) {
+                                $horarios_ocupados[] = $dias_semana[$dia_num] . ' ' . $hora;
+                            }
+                        }
+                        echo implode(', ', $horarios_ocupados);
+                        ?>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Agendar Paciente
+        </div>
+        <div class="card-body">
+            <form id="agendarPacienteForm">
+                <div class="form-group">
+                    <label for="servicio">Servicio</label>
+                    <select id="servicio" name="servicio" class="form-control" required>
+                        <option value="">Seleccione un servicio</option>
+                        <option value="Kinesiología">Kinesiología</option>
+                        <option value="Terapia manual">Terapia manual</option>
+                        <option value="Drenaje Linfático">Drenaje Linfático</option>
+                        <option value="Nutrición">Nutrición</option>
+                        <option value="Traumatología">Traumatología</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="profesional">Profesional</label>
+                    <select id="profesional" name="profesional" class="form-control" required>
+                        <option value="">Seleccione un profesional</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fecha">Fecha</label>
+                    <input type="text" id="fecha" name="fecha" class="form-control fecha" placeholder="Seleccione la fecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="hora">Hora</label>
+                    <select id="hora" name="hora" class="form-control" required>
+                        <option value="">Seleccione una hora</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefono">Teléfono</label>
+                    <input type="text" id="telefono" name="telefono" class="form-control" placeholder="Teléfono" required>
+                </div>
+                <div class="form-group">
+                    <label for="gmail">Gmail</label>
+                    <input type="email" id="gmail" name="gmail" class="form-control" placeholder="Gmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="obra_social">Obra Social</label>
+                    <input type="text" id="obra_social" name="obra_social" class="form-control" placeholder="Obra Social" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Registrar Paciente</button>
+                </div>
+                <div id="message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="confirmation-card" id="confirmationCard">
+        <h2>Paciente registrado con éxito</h2>
+        <button id="agendarOtroPacienteBtn">Agendar otro paciente</button>
+        <button id="volverBtn">Volver</button>
     </div>
 </div>
 
@@ -390,6 +670,108 @@ $conn->close();
     function redirigirDiagnostico(id) {
         window.location.href = 'diagnostico.php?id=' + id;
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('agendarPacienteForm');
+        const servicioSelect = document.getElementById('servicio');
+        const profesionalSelect = document.getElementById('profesional');
+        const fechaInput = document.getElementById('fecha');
+        const horaSelect = document.getElementById('hora');
+        const messageDiv = document.getElementById('message');
+        const confirmationCard = document.getElementById('confirmationCard');
+        const agendarOtroPacienteBtn = document.getElementById('agendarOtroPacienteBtn');
+        const volverBtn = document.getElementById('volverBtn');
+
+        const todosLosProfesionales = {
+            'Kinesiología': ['Lucia Foricher', 'Gastón Olgiati'],
+            'Terapia manual': ['Mauro Robert', 'German Fernandez'],
+            'Drenaje Linfático': ['Melina Thome', 'Maria Paz'],
+            'Nutrición': ['Alejandro Perez'],
+            'Traumatología': ['Hernán López']
+        };
+
+        const todasLasHoras = [
+            '08:00', '09:00', '10:00', '11:00',
+            '13:00', '14:00', '15:00', '16:00',
+            '17:00', '18:00', '19:00', '20:00'
+        ];
+
+        function updateProfesionales(servicio) {
+            profesionalSelect.innerHTML = '<option value="">Seleccione un profesional</option>';
+            if (todosLosProfesionales[servicio]) {
+                todosLosProfesionales[servicio].forEach(profesional => {
+                    const option = document.createElement('option');
+                    option.value = profesional;
+                    option.textContent = profesional;
+                    profesionalSelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateHorasDisponibles() {
+            horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+            todasLasHoras.forEach(hora => {
+                const option = document.createElement('option');
+                option.value = hora;
+                option.textContent = hora;
+                horaSelect.appendChild(option);
+            });
+        }
+
+        servicioSelect.addEventListener('change', function() {
+            updateProfesionales(servicioSelect.value);
+            updateHorasDisponibles();
+        });
+
+        flatpickr(fechaInput, {
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            minDate: "today"
+        });
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Enviar datos al servidor para registrar el turno
+            fetch('agendar_paciente_backend.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    form.style.display = 'none';
+                    confirmationCard.style.display = 'block';
+                } else {
+                    messageDiv.textContent = result.message;
+                    messageDiv.classList.remove('success-message');
+                    messageDiv.classList.add('error-message');
+                }
+            })
+            .catch(error => {
+                messageDiv.textContent = 'Error al registrar el paciente. Por favor, inténtelo de nuevo.';
+                messageDiv.classList.remove('success-message');
+                messageDiv.classList.add('error-message');
+            });
+        });
+
+        agendarOtroPacienteBtn.addEventListener('click', function() {
+            form.style.display = 'block';
+            confirmationCard.style.display = 'none';
+            form.reset();
+            messageDiv.textContent = '';
+        });
+
+        volverBtn.addEventListener('click', function() {
+            window.location.href = 'pacientes.php';
+        });
+    });
 </script>
 </body>
-</html>
