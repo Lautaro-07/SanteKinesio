@@ -271,16 +271,26 @@ $colores_servicio = [
             padding: 5px;
             margin: 5px;
             text-align: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
             display: inline-block;
-            width: 130px;
-            border-radius: 10px;
+            width: 90px;
+            font-size: 12px;
             background-color: #f4f4f4; /* Color de fondo por defecto */
         }
 
-        .patient-card:hover {
-            background-color: #e0e0e0;
+        .patient-card div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            margin: auto;
+        }
+
+        .patient-card div p {
+            margin: 0;
+            flex: 1;
+            width: 100%;
+            text-align: center;
+            margin: auto;
         }
 
         .button-container {
@@ -419,108 +429,112 @@ $colores_servicio = [
             background-color: #7d9a7d;
         }
     </style>
-    <script>
-        function mostrarPrecioServicio() {
-            var select = document.getElementById("servicio");
-            var option = select.options[select.selectedIndex];
-            var precio = option.getAttribute("data-precio");
-            document.getElementById("precio_actual").value = precio;
-        }
-
-        function fetchPacientes(profesional) {
-            // Mostrar todos los horarios y pacientes del profesional seleccionado
-            var rows = document.querySelectorAll('.profesional');
-            rows.forEach(function(row) {
-                row.style.display = 'none';
-            });
-            var selectedProf = document.querySelector('.profesional[data-profesional="' + profesional + '"]');
-            selectedProf.style.display = 'block';
-
-            // Actualizar el encabezado de horarios disponibles
-            var header = document.getElementById('horarios-header');
-            header.innerText = "Horarios de " + profesional;
-        }
-    </script>
 </head>
 <body>
-
 <header>
-<nav class="nav_container navbar navbar-dark navbar-expand-lg">
-    <div class="container-fluid">
-        <div class="logo_container">
-            <img class="logo" src="../img/santeLogo.jpg" alt="Logo">
+    <nav class="nav_container navbar navbar-dark navbar-expand-lg">
+        <div class="container-fluid">
+            <div class="logo_container">
+                <img class="logo" src="../img/santeLogo.jpg" alt="Logo">
+            </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" 
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <ul class="ul_container navbar-nav ms-auto"> <!-- ms-auto empuja los elementos a la derecha -->
+                    <li class="nav-item">
+                        <a class="btn_horarios nav_link nav-link" style="color: #fff;" href="agendar_paciente.php">Agendar Paciente</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn_horarios" onclick="document.getElementById('modificar-precio').style.display='block'">Modificar Precio</button>                    
+                    </li>
+                    <li class="nav-item">
+                        <form method="GET" action="administrador.php">
+                            <input type="hidden" name="semana" value="anterior">
+                            <button type="submit">Semana Anterior</button>
+                        </form>
+                    </li>
+                    <li class="nav-item">
+                        <form method="GET" action="administrador.php">
+                            <input type="hidden" name="semana" value="actual">
+                            <button type="submit">Semana Actual</button>
+                        </form>
+                    </li>
+                    <li class="nav-item">
+                        <form method="GET" action="administrador.php">
+                            <input type="hidden" name="semana" value="siguiente">
+                            <button type="submit">Semana Siguiente</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" 
-            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-            <ul class="ul_container navbar-nav ms-auto"> <!-- ms-auto empuja los elementos a la derecha -->
-                <li class="nav-item">
-                    <a class="btn_horarios nav_link nav-link" style="color: #fff;" href="agendar_paciente.php">Agendar Paciente</a>
-                </li>
-                <li class="nav-item">
-                    <button class="btn_horarios" onclick="document.getElementById('modificar-precio').style.display='block'">Modificar Precio</button>                    
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+    </nav>
 </header>
-
 <div class="content" style="color: #000 !important;">
     <h1 style="font-weight: 600; letter-spacing: 10px;">Bienvenido</h1>
     <hr>
 
-    <div class="profesionales_container">
-        <?php foreach ($profesionales as $prof): ?>
-            <div class="profesional" data-profesional="<?php echo $prof; ?>" onclick="fetchPacientes('<?php echo $prof; ?>')">
-                <div class="imgProfesional">
-                    <img src="../img/<?php echo strtolower(str_replace(' ', '', $prof)); ?>.jpg" alt="<?php echo $prof; ?>">
-                </div>
-                <div class="profesionalTexto">
-                    <span><?php echo $prof; ?></span>
-                    <p><?php echo $prof; ?></p>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                <th>Pacientes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            foreach ($dias_semana as $dia_num => $dia) {
-                                if (isset($pacientes_por_hora[$dia_num])) {
-                                    foreach ($pacientes_por_hora[$dia_num] as $hora => $pacientes) {
-                                        echo "<tr>";
-                                        echo "<td>$hora</td>";
-                                        echo "<td>";
-                                        foreach ($pacientes as $paciente) {
-                                            if ($paciente['profesional'] == $prof) {
-                                                echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\">";
-                                                echo "<p><strong>{$paciente['nombre']}</strong></p>";
-                                                echo "<form method=\"POST\" action=\"administrador.php?id={$paciente['id']}\">";
-                                                echo "<input type=\"hidden\" name=\"asistencia_id\" value=\"{$paciente['id']}\">";
-                                                echo "<input type=\"checkbox\" name=\"asistio\" ".($paciente['asistio'] ? 'checked' : '')." onchange=\"this.form.submit()\">";
-                                                echo "</form>";
-                                                echo "</div>";
+    <section class="profesionales_container">
+        <?php
+        $profesionales = [
+            'Lucia Foricher' => 'lucia.jpg',
+            'Hernan Lopez' => 'hernan.jpg',
+            'Alejandro Perez Etcheber' => 'alejandro.jpg',
+            'Melina Thome' => 'melina.jpg',
+            'Dr. Mauro Robert' => 'mauro.jpg',
+            'Gastón Olgiati' => 'gastonO.jpg',
+            'Maria Paz' => 'maria.jpg',
+            'Dr. German Fernandez' => 'german.jpg',
+            'Dra. Mariana Ilari' => 'mariana.jpg',
+            'Constanza Marinello' => 'constanza.jpg',
+            'Florencia Goñi' => 'florencia.jpg',
+        ];
+
+        foreach ($profesionales as $nombre => $imagen) {
+        ?>
+        <div class="profesional">
+            <div class="imgProfesional">
+                <img src="../img/<?php echo $imagen; ?>" alt="<?php echo $nombre; ?>">
+            </div>
+            <div class="profesionalTexto">
+                <span>Lic. en kinesiología</span>
+                <p><?php echo strtoupper($nombre); ?></p>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pacientes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <?php
+                                foreach ($dias_semana as $dia_num => $dia) {
+                                    if (isset($pacientes_por_hora[$dia_num])) {
+                                        foreach ($pacientes_por_hora[$dia_num] as $hora => $pacientes) {
+                                            foreach ($pacientes as $paciente) {
+                                                if ($paciente['profesional'] == $nombre) {
+                                                    echo "<div class=\"patient-card\" style=\"background-color: {$colores_servicio[$paciente['servicio']]};\">";
+                                                    echo "<p><strong>{$paciente['nombre']}</strong></p>";
+                                                    echo "</div>";
+                                                }
                                             }
                                         }
-                                        echo "</td>";
-                                        echo "</tr>";
                                     }
                                 }
-                            }
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
+                                ?>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-        <?php endforeach; ?>
-    </div>
+        </div>
+        <?php } ?>
+    </section>
 
     <div id="modificar-precio" style="display:none" class="button-container">
         <form method="POST" action="administrador.php">
@@ -540,6 +554,5 @@ $colores_servicio = [
         </form>
     </div>
 </div>
-
 </body>
 </html>
