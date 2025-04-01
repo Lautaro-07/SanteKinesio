@@ -67,6 +67,18 @@ while ($row = $pacientes->fetch_assoc()) {
 $disponibilidadProfesionales = $_SESSION['disponibilidadProfesionales'];
 $disponibilidad = isset($disponibilidadProfesionales[$profesional]) ? $disponibilidadProfesionales[$profesional] : [];
 
+// Si el profesional es 'Lucia Foricher', agregar los horarios de 'Terapia Manual - RPG'
+$disponibilidadTerapiaManual = [];
+if ($profesional === 'Lucia Foricher') {
+    $disponibilidadTerapiaManual = [
+        'Monday' => ['16:00', '17:00', '18:00', '19:00'],
+        'Wednesday' => ['16:00', '17:00', '18:00', '19:00'],
+        'Tuesday' => ['11:00', '12:00', '13:00', '14:00', '15:00'],
+        'Thursday' => ['11:00', '12:00', '13:00', '14:00', '15:00'],
+        'Friday' => ['12:00', '13:00', '14:00', '15:00']
+    ];
+}
+
 $dias_semana = [
     1 => 'Lunes',
     2 => 'Martes',
@@ -112,6 +124,55 @@ foreach ($disponibilidad as $dia => $horas) {
             $horariosDisponibles[] = traducirDia($dia) . ' ' . $hora;
         } else {
             $horariosOcupados[] = traducirDia($dia) . ' ' . $hora;
+        }
+    }
+}
+
+$horariosDisponiblesTerapia = [];
+$horariosOcupadosTerapia = [];
+
+foreach ($disponibilidadTerapiaManual as $dia => $horas) {
+    foreach ($horas as $hora) {
+        if (!isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
+            $horariosDisponiblesTerapia[] = traducirDia($dia) . ' ' . $hora;
+        } else {
+            $horariosOcupadosTerapia[] = traducirDia($dia) . ' ' . $hora;
+        }
+    }
+}
+
+// Definir las horas únicas
+$horasUnicas = [];
+if (isset($disponibilidad)) {
+    foreach ($disponibilidad as $dia => $horas) {
+        foreach ($horas as $hora) {
+            if (!in_array($hora, $horasUnicas)) {
+                $horasUnicas[] = $hora;
+            }
+        }
+    }
+}
+foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
+    foreach ($horas as $hora => $pacientes) {
+        if (!in_array($hora, $horasUnicas)) {
+            $horasUnicas[] = $hora;
+        }
+    }
+}
+
+// Definir las horas únicas para Terapia Manual - RPG
+$horasUnicasTerapia = [];
+foreach ($disponibilidadTerapiaManual as $dia => $horas) {
+    foreach ($horas as $hora) {
+        if (!in_array($hora, $horasUnicasTerapia)) {
+            $horasUnicasTerapia[] = $hora;
+        }
+    }
+}
+foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
+    foreach ($horas as $hora => $pacientes) {
+        if (!in_array($hora, $horasUnicasTerapia)) {
+            $horasUnicasTerapia[] = $hora;
         }
     }
 }
@@ -218,11 +279,12 @@ foreach ($disponibilidad as $dia => $horas) {
             justify-content: start;
             align-items: start;
             margin-top: 20px;
-            width: 100%;
+            width: 70%;
+            flex-wrap: wrap;
         }
 
         .button-container form {
-            flex-grow: 1;
+            flex-grow: 0;
         }
 
         .button-container button {
@@ -233,6 +295,7 @@ foreach ($disponibilidad as $dia => $horas) {
             border-radius: 5px;
             cursor: pointer;
             margin: 5px;
+            width: 195px;
         }
 
         .button-container button:hover {
@@ -282,6 +345,7 @@ foreach ($disponibilidad as $dia => $horas) {
             background-color: #F6EBD5;
             padding: 10px;
             border-radius: 16px;
+            width: 200px;
         }
 
         @media (max-width: 992px) {
@@ -314,6 +378,12 @@ foreach ($disponibilidad as $dia => $horas) {
                 text-align: center;
             }
 
+            .indice_semana{
+            position: relative;
+            right: 5px;
+            }
+
+
             .search-container button {
                 background-color: #96B394;
                 color: white;
@@ -326,6 +396,15 @@ foreach ($disponibilidad as $dia => $horas) {
                 width: 100px;
                 cursor: pointer;
             }
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            margin-top: 20px;
+            width: 100%;
+            flex-wrap: wrap;
         }
 
         .search-container {
@@ -487,7 +566,7 @@ foreach ($disponibilidad as $dia => $horas) {
 </header>
 <div class="content" style="color: #000 !important;">
     <h1>Pacientes de <?php echo htmlspecialchars($profesional); ?></h1>
-        <hr>
+
     <div class="button-container">
         <form method="GET" action="profesional_pacientes.php">
             <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
@@ -508,6 +587,9 @@ foreach ($disponibilidad as $dia => $horas) {
     </div>
 
     <div class="table-container">
+        <hr>
+        <h2>Horarios</h2>
+        <hr>
         <table>
             <thead>
                 <tr>
@@ -521,29 +603,16 @@ foreach ($disponibilidad as $dia => $horas) {
             </thead>
             <tbody>
                 <?php
-                // Obtener todas las horas únicas incluyendo las de disponibilidad
-                $horasUnicas = [];
-                if (isset($disponibilidad)) {
-                    foreach ($disponibilidad as $dia => $horas) {
-                        foreach ($horas as $hora) {
-                            if (!in_array($hora, $horasUnicas)) {
-                                $horasUnicas[] = $hora;
-                            }
-                        }
-                    }
+                // Obtener todas las horas únicas para los horarios normales
+                $horasUnicasNormales = array_diff($horasUnicas, $horasUnicasTerapia);
+                if ($profesional === 'Lucia Foricher') {
+                    $horasUnicasNormales[] = '11:00'; // Incluir la hora 11:00 solo para Lucia Foricher
                 }
-                foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
-                    foreach ($horas as $hora => $pacientes) {
-                        if (!in_array($hora, $horasUnicas)) {
-                            $horasUnicas[] = $hora;
-                        }
-                    }
-                }
-                // Ordenar las horas
-                sort($horasUnicas);
+                $horasUnicasNormales = array_unique($horasUnicasNormales);
+                sort($horasUnicasNormales);
 
-                // Mostrar las horas y los pacientes por día
-                foreach ($horasUnicas as $hora) :
+                // Mostrar las horas y los pacientes por día para los horarios normales
+                foreach ($horasUnicasNormales as $hora) :
                 ?>
                 <tr>
                     <td><?php echo $hora; ?></td>
@@ -556,14 +625,16 @@ foreach ($disponibilidad as $dia => $horas) {
                             foreach ($pacientes_por_dia_y_hora[$dia_num][$hora] as $paciente) :
                                 // Obtener el servicio del paciente
                                 $servicio = $paciente['servicio'];
-                                // Verificar si el servicio tiene un color asignado en el array $colores_servicio
-                                $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
+                                if ($servicio !== 'Terapia Manual - RPG'):
+                                    // Verificar si el servicio tiene un color asignado en el array $colores_servicio
+                                    $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
                         ?>
                         <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;" onclick="redirigirDiagnostico(<?php echo $paciente['id']; ?>)">
                             <p><strong><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
                             <p><?php echo htmlspecialchars($paciente['fecha']); ?></p>
                         </div>
                         <?php
+                                    endif;
                             endforeach;
                         else :
                         ?>
@@ -608,6 +679,95 @@ foreach ($disponibilidad as $dia => $horas) {
         </table>
     </div>
 
+    <?php if ($profesional === 'Lucia Foricher'): ?>
+    <div class="table-container" style="margin-top: 20px;">
+        <hr>
+        <h2>Terapia Manual - RPG</h2>
+        <hr>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <?php foreach ($dias_semana as $dia) : ?>
+                        <th><?php echo $dia; ?></th>
+                    <?php endforeach; ?>
+                    <th>Horarios Disponibles</th>
+                    <th>Horarios Ocupados</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                // Mostrar las horas y los pacientes por día para Terapia Manual - RPG
+                foreach ($horasUnicasTerapia as $hora) :
+                ?>
+                <tr>
+                    <td><?php echo $hora; ?></td>
+                    <?php
+                    foreach ($dias_semana as $dia_num => $dia) :
+                    ?>
+                    <td>
+                        <?php
+                        // Verificar si hay pacientes para Terapia Manual - RPG en la hora y día específicos
+                        $pacientesTerapiaManual = array_filter($pacientes_por_dia_y_hora[$dia_num][$hora] ?? [], function($paciente) {
+                            return $paciente['servicio'] === 'Terapia Manual - RPG';
+                        });
+                        if (!empty($pacientesTerapiaManual)) :
+                            foreach ($pacientesTerapiaManual as $paciente) :
+                                // Obtener el servicio del paciente
+                                $servicio = $paciente['servicio'];
+                                // Verificar si el servicio tiene un color asignado en el array $colores_servicio
+                                $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
+                        ?>
+                        <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;" onclick="redirigirDiagnostico(<?php echo $paciente['id']; ?>)">
+                            <p><strong><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
+                            <p><?php echo htmlspecialchars($paciente['fecha']); ?></p>
+                        </div>
+                        <?php
+                            endforeach;
+                        else :
+                        ?>
+                        <!-- Mostrar horas disponibles -->
+                        <?php
+                        if (isset($disponibilidadTerapiaManual[$dia]) && in_array($hora, $disponibilidadTerapiaManual[$dia])) {
+                            echo "<div class='available-card'><p>Disponible</p></div>";
+                        } else {
+                            echo "<p>-</p>";
+                        }
+                        ?>
+                        <?php endif; ?>
+                    </td>
+                    <?php endforeach; ?>
+                    <td>
+                        <?php
+                        // Mostrar horarios disponibles para Terapia Manual - RPG
+                        $horarios_disponibles_terapia = [];
+                        foreach ($disponibilidadTerapiaManual as $dia => $horas) {
+                            if (in_array($hora, $horas) && !isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
+                                $horarios_disponibles_terapia[] = traducirDia($dia) . ' ' . $hora;
+                            }
+                        }
+                        echo implode(', ', $horarios_disponibles_terapia);
+                        ?>
+                    </td>
+                    <td>
+                        <?php
+                        // Mostrar horarios ocupados para Terapia Manual - RPG
+                        $horarios_ocupados_terapia = [];
+                        foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
+                            if (isset($horas[$hora])) {
+                                $horarios_ocupados_terapia[] = $dias_semana[$dia_num] . ' ' . $hora;
+                            }
+                        }
+                        echo implode(', ', $horarios_ocupados_terapia);
+                        ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+
     <div class="card">
         <div class="card-header">
             Agendar Paciente
@@ -619,7 +779,7 @@ foreach ($disponibilidad as $dia => $horas) {
                     <select id="servicio" name="servicio" class="form-control" required>
                         <option value="">Seleccione un servicio</option>
                         <option value="Kinesiología">Kinesiología</option>
-                        <option value="Terapia manual">Terapia manual</option>
+                        <option value="Terapia Manual - RPG">Terapia Manual - RPG</option>
                         <option value="Drenaje Linfático">Drenaje Linfático</option>
                         <option value="Nutrición">Nutrición</option>
                         <option value="Traumatología">Traumatología</option>
@@ -690,7 +850,7 @@ foreach ($disponibilidad as $dia => $horas) {
 
         const todosLosProfesionales = {
             'Kinesiología': ['Lucia Foricher', 'Gastón Olgiati'],
-            'Terapia manual': ['Mauro Robert', 'German Fernandez'],
+            'Terapia Manual - RPG': ['Mauro Robert', 'German Fernandez'],
             'Drenaje Linfático': ['Melina Thome', 'Maria Paz'],
             'Nutrición': ['Alejandro Perez'],
             'Traumatología': ['Hernán López']
