@@ -332,7 +332,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select id="servicio" name="servicio" class="form-control" required>
                         <option value="">Seleccione un servicio</option>
                         <option value="Kinesiología">Kinesiología</option>
-                        <option value="Terapia manual">Terapia manual</option>
+                        <option value="Terapia Manual - RPG">Terapia Manual - RPG</option>
                         <option value="Drenaje Linfático">Drenaje Linfático</option>
                         <option value="Nutrición">Nutrición</option>
                         <option value="Traumatología">Traumatología</option>
@@ -395,12 +395,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const agendarOtroPacienteBtn = document.getElementById('agendarOtroPacienteBtn');
             const volverBtn = document.getElementById('volverBtn');
 
-            const todosLosProfesionales = {
-                'Kinesiología': ['Lucia Foricher', 'Gastón Olgiati'],
-                'Terapia manual': ['Mauro Robert', 'German Fernandez'],
-                'Drenaje Linfático': ['Melina Thome', 'Maria Paz'],
-                'Nutrición': ['Alejandro Perez'],
-                'Traumatología': ['Hernán López']
+            const profesionales_por_servicio = {
+                'Nutrición':  ['Maria Paz'],
+                'Terapia Manual - RPG':  ['Lucia Foricher', 'Mariana Ilari'],
+                'Traumatología':  ['Miriam Rossello'],
+                'Drenaje Linfático':  ['Florencia Goñi', 'Constanza Marinello'],
+                'Kinesiología': ['Lucia Foricher', 'Alejandro Perez', 'Mauro Robert', 'Gastón Olgiati', 'German Fernandez', 'Melina Thome', 'Hernan Lopez']
             };
 
             const todasLasHoras = [
@@ -411,8 +411,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             function updateProfesionales(servicio) {
                 profesionalSelect.innerHTML = '<option value="">Seleccione un profesional</option>';
-                if (todosLosProfesionales[servicio]) {
-                    todosLosProfesionales[servicio].forEach(profesional => {
+                if (profesionales_por_servicio[servicio]) {
+                    profesionales_por_servicio[servicio].forEach(profesional => {
                         const option = document.createElement('option');
                         option.value = profesional;
                         option.textContent = profesional;
