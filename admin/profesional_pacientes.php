@@ -20,17 +20,33 @@ if ($conn->connect_error) {
     die("Conexión fallida: " . $conn->connect_error);
 }
 
-// Obtener el mes y el año actual
-$mes_actual = date('m');
-$anio_actual = date('Y');
+// Obtener la semana seleccionada
+$semana = isset($_GET['semana']) ? $_GET['semana'] : 'actual';
+switch ($semana) {
+    case 'anterior':
+        $inicio_semana = (new DateTime())->modify('last week')->format('Y-m-d');
+        $fin_semana = (new DateTime())->modify('last week +6 days')->format('Y-m-d');
+        break;
+    case 'siguiente':
+        $inicio_semana = (new DateTime())->modify('next week')->format('Y-m-d');
+        $fin_semana = (new DateTime())->modify('next week +6 days')->format('Y-m-d');
+        break;
+    case 'actual':
+    default:
+        $inicio_semana = (new DateTime())->modify('this week')->format('Y-m-d');
+        $fin_semana = (new DateTime())->modify('this week +6 days')->format('Y-m-d');
+}
 
-// Obtener el mes y el año seleccionados
-$mes = isset($_GET['mes']) ? $_GET['mes'] : $mes_actual;
-$anio = isset($_GET['anio']) ? $_GET['anio'] : $anio_actual;
+$actual_inicio_semana = (new DateTime())->modify('this week')->format('Y-m-d');
+$actual_fin_semana = (new DateTime())->modify('this week +6 days')->format('Y-m-d');
+$anterior_inicio_semana = (new DateTime())->modify('last week')->format('Y-m-d');
+$anterior_fin_semana = (new DateTime())->modify('last week +6 days')->format('Y-m-d');
+$siguiente_inicio_semana = (new DateTime())->modify('next week')->format('Y-m-d');
+$siguiente_fin_semana = (new DateTime())->modify('next week +6 days')->format('Y-m-d');
 
-$sql = "SELECT * FROM turnos WHERE profesional = ? AND MONTH(fecha) = ? AND YEAR(fecha) = ? ORDER BY fecha, hora";
+$sql = "SELECT * FROM turnos WHERE profesional = ? AND fecha BETWEEN ? AND ? ORDER BY fecha, hora";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('sii', $profesional, $mes, $anio);
+$stmt->bind_param('sss', $profesional, $inicio_semana, $fin_semana);
 $stmt->execute();
 $pacientes = $stmt->get_result();
 
@@ -64,29 +80,11 @@ $dias_semana = [
 // Colores por servicio
 $colores_servicio = [
     'Kinesiología' => '#E2C6C2',
-    'Terapia manual' => '#A6DA9C',
+    'Terapia Manual - RPG' => '#A6DA9C',
     'Drenaje Linfático' => '#BBFFFF',
     'Nutrición' => '#EE976A',
     'Traumatología' => '#A9B0F4'
 ];
-
-// Funciones para obtener el mes anterior y siguiente
-function obtenerMesAnterior($mes, $anio) {
-    if ($mes == 1) {
-        return [12, $anio - 1];
-    }
-    return [$mes - 1, $anio];
-}
-
-function obtenerMesSiguiente($mes, $anio) {
-    if ($mes == 12) {
-        return [1, $anio + 1];
-    }
-    return [$mes + 1, $anio];
-}
-
-list($mes_anterior, $anio_anterior) = obtenerMesAnterior($mes, $anio);
-list($mes_siguiente, $anio_siguiente) = obtenerMesSiguiente($mes, $anio);
 
 $conn->close();
 
@@ -220,7 +218,7 @@ foreach ($disponibilidad as $dia => $horas) {
             justify-content: start;
             align-items: start;
             margin-top: 20px;
-            width: 50%;
+            width: 100%;
         }
 
         .button-container form {
@@ -239,6 +237,11 @@ foreach ($disponibilidad as $dia => $horas) {
 
         .button-container button:hover {
             background-color: #7d9a7d;
+        }
+
+        .button-container span {
+            margin-left: 10px;
+            align-self: center;
         }
 
         .navbar-collapse {
@@ -261,19 +264,24 @@ foreach ($disponibilidad as $dia => $horas) {
             border-radius: 10px !important;
         }
 
-        .btn_horarios button {
+        .btn_horarios {
             background-color: #96B394;
             color: white;
             border: none;
             padding: 8px;
             cursor: pointer;
             border-radius: 10px !important;
-            position: relative;
-            top: 8px;
         }
 
         .btn_horarios button:hover {
             background-color: rgb(113, 139, 111);
+        }
+
+        .indice_semana{
+            border: 1px solid #000;
+            background-color: #F6EBD5;
+            padding: 10px;
+            border-radius: 16px;
         }
 
         @media (max-width: 992px) {
@@ -469,7 +477,7 @@ foreach ($disponibilidad as $dia => $horas) {
                     </li>
                     <li class="nav-item">
                         <form method="GET" action="administrador.php">
-                            <button type="submit">Volver</button>
+                            <button class="btn_horarios" type="submit">Volver</button>
                         </form>
                     </li>
                 </ul>
@@ -479,26 +487,24 @@ foreach ($disponibilidad as $dia => $horas) {
 </header>
 <div class="content" style="color: #000 !important;">
     <h1>Pacientes de <?php echo htmlspecialchars($profesional); ?></h1>
-
+        <hr>
     <div class="button-container">
         <form method="GET" action="profesional_pacientes.php">
             <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
-            <input type="hidden" name="mes" value="<?php echo $mes_anterior; ?>">
-            <input type="hidden" name="anio" value="<?php echo $anio_anterior; ?>">
-            <button type="submit">Mes Anterior</button>
+            <input type="hidden" name="semana" value="anterior">
+            <button type="submit">Semana Anterior</button>
         </form>
         <form method="GET" action="profesional_pacientes.php">
             <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
-            <input type="hidden" name="mes" value="<?php echo $mes_actual; ?>">
-            <input type="hidden" name="anio" value="<?php echo $anio_actual; ?>">
-            <button type="submit">Mes Actual</button>
+            <input type="hidden" name="semana" value="actual">
+            <button type="submit">Semana Actual</button>
         </form>
         <form method="GET" action="profesional_pacientes.php">
             <input type="hidden" name="profesional" value="<?php echo $profesional; ?>">
-            <input type="hidden" name="mes" value="<?php echo $mes_siguiente; ?>">
-            <input type="hidden" name="anio" value="<?php echo $anio_siguiente; ?>">
-            <button type="submit">Mes Siguiente</button>
+            <input type="hidden" name="semana" value="siguiente">
+            <button type="submit">Semana Siguiente</button>
         </form>
+        <span class="indice_semana"><?php echo $inicio_semana . " - " . $fin_semana; ?></span>
     </div>
 
     <div class="table-container">
