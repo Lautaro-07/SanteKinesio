@@ -6,6 +6,16 @@ if (!isset($_SESSION['disponibilidadProfesionales'])) {
 }
 
 $disponibilidadProfesionales = $_SESSION['disponibilidadProfesionales'];
+$servicio = isset($_SESSION['servicio']) ? $_SESSION['servicio'] : 'Kinesiología';
+
+// Agregar horarios adicionales para Lucia Foricher (Terapia Manual - RPG)
+$disponibilidadProfesionales['Lucia Foricher (Terapia Manual - RPG)'] = [
+    'Monday' => ['16:00', '17:00', '18:00', '19:00'],
+    'Wednesday' => ['16:00', '17:00', '18:00', '19:00'],
+    'Tuesday' => ['11:00', '12:00', '13:00', '14:00', '15:00'],
+    'Thursday' => ['11:00', '12:00', '13:00', '14:00', '15:00'],
+    'Friday' => ['12:00', '13:00', '14:00', '15:00']
+];  
 
 // Conectar a la base de datos
 $mysqli = new mysqli("localhost", "root", "", "sante");
@@ -24,7 +34,7 @@ if (!isset($_SESSION['profesional'])) {
 $profesional = $_SESSION['profesional'];
 
 // Verificar disponibilidad del profesional
-if (!isset($disponibilidadProfesionales[$profesional])) {
+if (!isset($disponibilidadProfesionales[$profesional]) && !isset($disponibilidadProfesionales[$profesional . ' (Terapia Manual - RPG)'])) {
     die("El profesional $profesional no tiene horarios definidos.");
 }
 
@@ -48,18 +58,16 @@ if (isset($_GET['fecha'])) {
     $diaSemana = date('l', strtotime($fecha)); // Obtener el día de la semana de la fecha seleccionada
     
     // Verificar si el día de la semana tiene disponibilidad definida
-    if (!isset($disponibilidadProfesionales[$profesional][$diaSemana])) {
+    if ($servicio == 'Terapia Manual - RPG' && isset($disponibilidadProfesionales[$profesional . ' (Terapia Manual - RPG)'][$diaSemana])) {
+        $horasDisponibles = $disponibilidadProfesionales[$profesional . ' (Terapia Manual - RPG)'][$diaSemana];
+    } elseif (isset($disponibilidadProfesionales[$profesional][$diaSemana])) {
+        $horasDisponibles = $disponibilidadProfesionales[$profesional][$diaSemana];
+    } else {
         die("El profesional $profesional no tiene horarios definidos para el día $diaSemana.");
     }
 
-    $horasDisponibles = $disponibilidadProfesionales[$profesional][$diaSemana];
-
     // Obtener las horas ocupadas de la base de datos
-    if ($_SESSION['servicio'] == 'Kinesiología') {
-        $stmt = $mysqli->prepare("SELECT TIME_FORMAT(hora, '%H:%i') as hora, COUNT(*) as count FROM turnos WHERE profesional = ? AND fecha = ? AND servicio = 'Kinesiología' GROUP BY hora HAVING count >= 4");
-    } else {
-        $stmt = $mysqli->prepare("SELECT TIME_FORMAT(hora, '%H:%i') as hora FROM turnos WHERE profesional = ? AND fecha = ?");
-    }
+    $stmt = $mysqli->prepare("SELECT TIME_FORMAT(hora, '%H:%i') as hora FROM turnos WHERE profesional = ? AND fecha = ?");
     $stmt->bind_param("ss", $profesional, $fecha);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -87,11 +95,9 @@ $imagenes_profesionales = [
     'German Fernandez' => 'img/german.jpg',
     'Gastón Olgiati' => 'img/gastonO.jpg',
     'Melina Thome' => 'img/melina.jpg',
-    'Hernán López' => 'img/hernan.jpg',
+    'Hernan Lopez' => 'img/hernan.jpg',
     'Alejandro Perez' => 'img/alejandro.jpg',
 ];
-
-$servicio = isset($_SESSION['servicio']) ? $_SESSION['servicio'] : 'Servicio no definido';
 
 $profesionalesDescripciones = [
     'Hernan Lopez' => [
@@ -238,14 +244,13 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
         }
 
         .calendar-container {
-            width: 00px;
-            margin:  auto;
+            width: 100%;
+            margin: auto;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             top: 20px;
-
         }
 
         .flatpickr-calendar {
@@ -372,12 +377,12 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
             font-size: 17px;
             text-align: center;
             margin-top: 5px;
-            color:rgb(190, 190, 190);
+            color: rgb(190, 190, 190);
             position: relative;
             top: 50px;
         }
 
-        .btn-vermas{
+        .btn-vermas {
             z-index: 300;
             position: relative;
             top: 50px;
@@ -395,78 +400,83 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
             border-radius: 10px;
         }
 
-        .btn-vermas:hover{
+        .btn-vermas:hover {
             color: #fff;
-            background-color:rgb(131, 165, 126);
-            transition: .5s;
+            background-color: rgb(131, 165, 126);
+            transition: 0.5s;
         }
 
         @media (max-width: 768px) {
-    .calendar-container {
-        width: 100%;
-        padding: 10px;
-    }
+            .calendar-container {
+                width: 100%;
+                padding: 10px;
+            }
 
-    .profesionalesIMG {
-        width: 90%;
-        height: 300px;
-        position: relative;
-        border-radius: 10px;
-        margin: auto;
-        top: 10px;
-    }
+            .logo_container{
+                width: 90%;
+                display: flex;
+                justify-content: start;
+            }
 
-    .profesional_img {
-        width: 180px;
-        height: 180px;
-        position: relative;
-        bottom: 0px;
-    }
+            .profesionalesIMG {
+                width: 90%;
+                height: 300px;
+                position: relative;
+                border-radius: 10px;
+                margin: auto;
+                top: 0px;
+            }
 
-    .profesional_img img{
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 100%;
-        position: relative;
-        bottom: 0px;
-    }
+            .profesional_img {
+                width: 180px;
+                height: 180px;
+                position: relative;
+                bottom: 0px;
+            }
 
-    .profesional-info h2,
-    .profesional-info p {
-        text-align: center;
-        font-size: 18px;
-        position: relative;
-        top: 40px;
-    }
+            .profesional_img img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 100%;
+                position: relative;
+                bottom: 0px;
+            }
 
-    .servicio_title {
-        max-width: 100%;
-        font-size: 20px;
-        letter-spacing: 4px;
-        padding: 8px;
-    }
+            .profesional-info h2,
+            .profesional-info p {
+                text-align: center;
+                font-size: 18px;
+                position: relative;
+                top: 40px;
+            }
 
-    .time-card {
-        width: 100%;
-        height: 100vh;
-        justify-content: center;
-        align-items: center;
-    }
+            .servicio_title {
+                max-width: 100%;
+                font-size: 20px;
+                letter-spacing: 4px;
+                padding: 8px;
+            }
 
-    #modal-content {
-        width: 90%;
-        max-width: 350px;
-    }
+            .time-card {
+                width: 100%;
+                height: 100vh;
+                justify-content: center;
+                align-items: center;
+            }
 
-    #confirmarTurno {
-        width: 100%;
-        padding: 12px;
-        position: relative;
-        top: 0;
-    }
-}
-       
+            #modal-content {
+                width: 90%;
+                max-width: 350px;
+            }
+
+            #confirmarTurno {
+                width: 100%;
+                padding: 12px;
+                position: relative;
+                top: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -486,7 +496,7 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
             </div>
             <h2><?= $profesionalesDescripciones[$profesional]['nombre'] ?></h2>
             <p><?php echo $descripcionCorta; ?></p>
-            <a href="pages/detalle.php?nombre=<?= urlencode($profesional) ?>" class="btn-vermas">Ver Más</a> <!-- Botón Ver Más -->
+            <a href="pages/detalle.php?nombre=<?= urlencode($profesional) ?>" class="btn-vermas">Ver Más</a>
         </div>
     </div>
 
@@ -501,7 +511,7 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
         </form>
     </div>
     </section>
-    <!-- Modal de selección de hora -->
+
     <div id="horaModal" class="time-card">
         <div id="modal-content">
             <h2>Selecciona la Hora</h2>
@@ -525,7 +535,7 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
             function(date) {
                 const diaSemana = date.toLocaleString("en", { weekday: "long" }); // Obtener el día en inglés
                 // Días disponibles para el profesional
-                const diasDisponibles = <?= json_encode(array_keys($disponibilidadProfesionales[$profesional])) ?>;
+                const diasDisponibles = <?= json_encode(array_keys(($servicio == 'Terapia Manual - RPG') ? $disponibilidadProfesionales[$profesional . ' (Terapia Manual - RPG)'] : $disponibilidadProfesionales[$profesional])) ?>;
                 return !diasDisponibles.includes(diaSemana); // Deshabilitar días no disponibles
             }
         ],
