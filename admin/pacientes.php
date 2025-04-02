@@ -37,9 +37,9 @@ if (!isset($_SESSION['disponibilidadProfesionales'])) {
             'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
             'Friday' => ['13:00', '14:00', '15:00', '16:00']
         ],
-        'Hernán López' => [
-            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+        'Hernan Lopez' => [
+            'Tuesday' => ['08:00', '09:00', '10:00', '11:00', '12:00'],
+            'Thursday' => ['08:00', '09:00', '10:00', '11:00', '12:00'],
         ],
         'Alejandro Perez' => [
             'Monday' => ['08:00', '09:00', '10:00', '11:00'],
@@ -125,9 +125,9 @@ function habilitarHorarios(&$disponibilidad, $profesional) {
             'Wednesday' => ['13:00', '14:00', '15:00', '16:00'],
             'Friday' => ['13:00', '14:00', '15:00', '16:00']
         ],
-        'Hernán López' => [
-            'Tuesday' => ['08:00', '09:00', '10:00', '11:00'],
-            'Thursday' => ['08:00', '09:00', '10:00', '11:00']
+        'Hernan Lopez' => [
+            'Tuesday' => ['08:00', '09:00', '10:00', '11:00', '12:00'],
+            'Thursday' => ['08:00', '09:00', '10:00', '11:00', '12:00']
         ],
         'Alejandro Perez' => [
             'Monday' => ['08:00', '09:00', '10:00', '11:00'],
@@ -278,7 +278,7 @@ foreach ($pacientes_array as $row) {
 // Colores por servicio
 $colores_servicio = [
     'Kinesiología' => '#E2C6C2',
-    'Terapia manual' => '#A6DA9C',
+    'Terapia Manual - RPG' => '#A6DA9C',
     'Drenaje Linfático' => '#BBFFFF',
     'Nutrición' => '#EE976A',
     'Traumatología' => '#A9B0F4'
@@ -451,7 +451,7 @@ list($mes_siguiente, $anio_siguiente) = obtenerMesSiguiente($mes, $anio);
             cursor: pointer;
             border-radius: 10px !important;
             position: relative;
-            top: 8px;
+            top: 0px;
         }
 
         .btn_horarios button:hover {
@@ -656,7 +656,7 @@ list($mes_siguiente, $anio_siguiente) = obtenerMesSiguiente($mes, $anio);
                                             // Verificar si el servicio tiene un color asignado en el array $colores_servicio
                                             $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
                                     ?>
-                                            <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;">
+                                            <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;" onclick="window.location.href='diagnostico.php?id=<?php echo $paciente['id']; ?>'">
                                                 <div>
                                                     <p style="margin: 0; width: 0px; padding: 0px;"><?php echo htmlspecialchars($paciente['numero_sesion']); ?></p>
                                                     <p><strong style="text-align: center; margin-right: 17px;"><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
