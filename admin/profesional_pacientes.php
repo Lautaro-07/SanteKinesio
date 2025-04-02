@@ -128,15 +128,12 @@ foreach ($disponibilidad as $dia => $horas) {
     }
 }
 
-$horariosDisponiblesTerapia = [];
-$horariosOcupadosTerapia = [];
-
 foreach ($disponibilidadTerapiaManual as $dia => $horas) {
     foreach ($horas as $hora) {
         if (!isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
-            $horariosDisponiblesTerapia[] = traducirDia($dia) . ' ' . $hora;
+            $horariosDisponibles[] = traducirDia($dia) . ' ' . $hora;
         } else {
-            $horariosOcupadosTerapia[] = traducirDia($dia) . ' ' . $hora;
+            $horariosOcupados[] = traducirDia($dia) . ' ' . $hora;
         }
     }
 }
@@ -152,6 +149,13 @@ if (isset($disponibilidad)) {
         }
     }
 }
+foreach ($disponibilidadTerapiaManual as $dia => $horas) {
+    foreach ($horas as $hora) {
+        if (!in_array($hora, $horasUnicas)) {
+            $horasUnicas[] = $hora;
+        }
+    }
+}
 foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
     foreach ($horas as $hora => $pacientes) {
         if (!in_array($hora, $horasUnicas)) {
@@ -159,25 +163,7 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
         }
     }
 }
-
-// Definir las horas únicas para Terapia Manual - RPG
-$horasUnicasTerapia = [];
-foreach ($disponibilidadTerapiaManual as $dia => $horas) {
-    foreach ($horas as $hora) {
-        if (!in_array($hora, $horasUnicasTerapia)) {
-            $horasUnicasTerapia[] = $hora;
-        }
-    }
-}
-foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
-    foreach ($horas as $hora => $pacientes) {
-        if (!in_array($hora, $horasUnicasTerapia)) {
-            $horasUnicasTerapia[] = $hora;
-        }
-    }
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -541,18 +527,20 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
 <body>
 <header>
     <nav class="nav_container navbar navbar-dark navbar-expand-lg">
-        <div class="container-fluid">
+        <div class=" container-fluid">
             <div class="logo_container">
                 <img class="logo" src="../img/santeLogo.jpg" alt="Logo">
             </div>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" 
-                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false"
+                aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                 <ul class="ul_container navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="btn_horarios nav_link nav-link" style="color: #fff;" href="agendar_paciente.php">Agendar Paciente</a>
+                        <a class="btn_horarios nav_link nav-link" style="color: #fff;" href="agendar_paciente.php">Agendar
+                            Paciente</a>
                     </li>
                     <li class="nav-item">
                         <form method="GET" action="administrador.php">
@@ -595,7 +583,7 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                 <tr>
                     <th>Hora</th>
                     <?php foreach ($dias_semana as $dia) : ?>
-                        <th><?php echo $dia; ?></th>
+                    <th><?php echo $dia; ?></th>
                     <?php endforeach; ?>
                     <th>Horarios Disponibles</th>
                     <th>Horarios Ocupados</th>
@@ -603,16 +591,8 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
             </thead>
             <tbody>
                 <?php
-                // Obtener todas las horas únicas para los horarios normales
-                $horasUnicasNormales = array_diff($horasUnicas, $horasUnicasTerapia);
-                if ($profesional === 'Lucia Foricher') {
-                    $horasUnicasNormales[] = '11:00'; // Incluir la hora 11:00 solo para Lucia Foricher
-                }
-                $horasUnicasNormales = array_unique($horasUnicasNormales);
-                sort($horasUnicasNormales);
-
-                // Mostrar las horas y los pacientes por día para los horarios normales
-                foreach ($horasUnicasNormales as $hora) :
+                // Mostrar las horas y los pacientes por día
+                foreach ($horasUnicas as $hora) :
                 ?>
                 <tr>
                     <td><?php echo $hora; ?></td>
@@ -625,22 +605,23 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                             foreach ($pacientes_por_dia_y_hora[$dia_num][$hora] as $paciente) :
                                 // Obtener el servicio del paciente
                                 $servicio = $paciente['servicio'];
-                                if ($servicio !== 'Terapia Manual - RPG'):
-                                    // Verificar si el servicio tiene un color asignado en el array $colores_servicio
-                                    $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
+                                // Verificar si el servicio tiene un color asignado en el array $colores_servicio
+                                $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
                         ?>
-                        <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;" onclick="redirigirDiagnostico(<?php echo $paciente['id']; ?>)">
+                        <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;"
+                            onclick="redirigirDiagnostico(<?php echo $paciente['id']; ?>)">
                             <p><strong><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
                             <p><?php echo htmlspecialchars($paciente['fecha']); ?></p>
                         </div>
                         <?php
-                                    endif;
                             endforeach;
                         else :
                         ?>
                         <!-- Mostrar horas disponibles -->
                         <?php
                         if (isset($disponibilidad[$dia_num]) && in_array($hora, $disponibilidad[$dia_num])) {
+                            echo "<div class='available-card'><p>Disponible</p></div>";
+                        } else if ($profesional === 'Lucia Foricher' && isset($disponibilidadTerapiaManual[$dia]) && in_array($hora, $disponibilidadTerapiaManual[$dia])) {
                             echo "<div class='available-card'><p>Disponible</p></div>";
                         } else {
                             echo "<p>-</p>";
@@ -656,6 +637,13 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                         foreach ($disponibilidad as $dia => $horas) {
                             if (in_array($hora, $horas) && !isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
                                 $horarios_disponibles[] = traducirDia($dia) . ' ' . $hora;
+                            }
+                        }
+                        if ($profesional === 'Lucia Foricher') {
+                            foreach ($disponibilidadTerapiaManual as $dia => $horas) {
+                                if (in_array($hora, $horas) && !isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
+                                    $horarios_disponibles[] = traducirDia($dia) . ' ' . $hora;
+                                }
                             }
                         }
                         echo implode(', ', $horarios_disponibles);
@@ -678,95 +666,6 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
             </tbody>
         </table>
     </div>
-
-    <?php if ($profesional === 'Lucia Foricher'): ?>
-    <div class="table-container" style="margin-top: 20px;">
-        <hr>
-        <h2>Terapia Manual - RPG</h2>
-        <hr>
-        <table>
-            <thead>
-                <tr>
-                    <th>Hora</th>
-                    <?php foreach ($dias_semana as $dia) : ?>
-                        <th><?php echo $dia; ?></th>
-                    <?php endforeach; ?>
-                    <th>Horarios Disponibles</th>
-                    <th>Horarios Ocupados</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                // Mostrar las horas y los pacientes por día para Terapia Manual - RPG
-                foreach ($horasUnicasTerapia as $hora) :
-                ?>
-                <tr>
-                    <td><?php echo $hora; ?></td>
-                    <?php
-                    foreach ($dias_semana as $dia_num => $dia) :
-                    ?>
-                    <td>
-                        <?php
-                        // Verificar si hay pacientes para Terapia Manual - RPG en la hora y día específicos
-                        $pacientesTerapiaManual = array_filter($pacientes_por_dia_y_hora[$dia_num][$hora] ?? [], function($paciente) {
-                            return $paciente['servicio'] === 'Terapia Manual - RPG';
-                        });
-                        if (!empty($pacientesTerapiaManual)) :
-                            foreach ($pacientesTerapiaManual as $paciente) :
-                                // Obtener el servicio del paciente
-                                $servicio = $paciente['servicio'];
-                                // Verificar si el servicio tiene un color asignado en el array $colores_servicio
-                                $color_fondo = isset($colores_servicio[$servicio]) ? $colores_servicio[$servicio] : '#FFFFFF'; // Color por defecto si no se encuentra el servicio
-                        ?>
-                        <div class="patient-card" style="background-color: <?php echo $color_fondo; ?>;" onclick="redirigirDiagnostico(<?php echo $paciente['id']; ?>)">
-                            <p><strong><?php echo htmlspecialchars($paciente['nombre']); ?></strong></p>
-                            <p><?php echo htmlspecialchars($paciente['fecha']); ?></p>
-                        </div>
-                        <?php
-                            endforeach;
-                        else :
-                        ?>
-                        <!-- Mostrar horas disponibles -->
-                        <?php
-                        if (isset($disponibilidadTerapiaManual[$dia]) && in_array($hora, $disponibilidadTerapiaManual[$dia])) {
-                            echo "<div class='available-card'><p>Disponible</p></div>";
-                        } else {
-                            echo "<p>-</p>";
-                        }
-                        ?>
-                        <?php endif; ?>
-                    </td>
-                    <?php endforeach; ?>
-                    <td>
-                        <?php
-                        // Mostrar horarios disponibles para Terapia Manual - RPG
-                        $horarios_disponibles_terapia = [];
-                        foreach ($disponibilidadTerapiaManual as $dia => $horas) {
-                            if (in_array($hora, $horas) && !isset($pacientes_por_dia_y_hora[date('N', strtotime($dia)) % 7][$hora])) {
-                                $horarios_disponibles_terapia[] = traducirDia($dia) . ' ' . $hora;
-                            }
-                        }
-                        echo implode(', ', $horarios_disponibles_terapia);
-                        ?>
-                    </td>
-                    <td>
-                        <?php
-                        // Mostrar horarios ocupados para Terapia Manual - RPG
-                        $horarios_ocupados_terapia = [];
-                        foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
-                            if (isset($horas[$hora])) {
-                                $horarios_ocupados_terapia[] = $dias_semana[$dia_num] . ' ' . $hora;
-                            }
-                        }
-                        echo implode(', ', $horarios_ocupados_terapia);
-                        ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php endif; ?>
 
     <div class="card">
         <div class="card-header">
@@ -793,7 +692,8 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                 </div>
                 <div class="form-group">
                     <label for="fecha">Fecha</label>
-                    <input type="text" id="fecha" name="fecha" class="form-control fecha" placeholder="Seleccione la fecha" required>
+                    <input type="text" id="fecha" name="fecha" class="form-control fecha" placeholder="Seleccione la fecha"
+                        required>
                 </div>
                 <div class="form-group">
                     <label for="hora">Hora</label>
@@ -803,11 +703,13 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                 </div>
                 <div class="form-group">
                     <label for="nombre">Nombre completo</label>
-                    <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre completo" required>
+                    <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre completo"
+                        required>
                 </div>
                 <div class="form-group">
                     <label for="telefono">Teléfono</label>
-                    <input type="text" id="telefono" name="telefono" class="form-control" placeholder="Teléfono" required>
+                    <input type="text" id="telefono" name="telefono" class="form-control" placeholder="Teléfono"
+                        required>
                 </div>
                 <div class="form-group">
                     <label for="gmail">Gmail</label>
@@ -815,7 +717,8 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                 </div>
                 <div class="form-group">
                     <label for="obra_social">Obra Social</label>
-                    <input type="text" id="obra_social" name="obra_social" class="form-control" placeholder="Obra Social" required>
+                    <input type="text" id="obra_social" name="obra_social" class="form-control" placeholder="Obra Social"
+                        required>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Registrar Paciente</button>
@@ -837,7 +740,7 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
         window.location.href = 'diagnostico.php?id=' + id;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('agendarPacienteForm');
         const servicioSelect = document.getElementById('servicio');
         const profesionalSelect = document.getElementById('profesional');
@@ -884,7 +787,7 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
             });
         }
 
-        servicioSelect.addEventListener('change', function() {
+        servicioSelect.addEventListener('change', function () {
             updateProfesionales(servicioSelect.value);
             updateHorasDisponibles();
         });
@@ -896,7 +799,7 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
             minDate: "today"
         });
 
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault();
 
             const formData = new FormData(form);
@@ -910,32 +813,32 @@ foreach ($pacientes_por_dia_y_hora as $dia_num => $horas) {
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    form.style.display = 'none';
-                    confirmationCard.style.display = 'block';
-                } else {
-                    messageDiv.textContent = result.message;
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        form.style.display = 'none';
+                        confirmationCard.style.display = 'block';
+                    } else {
+                        messageDiv.textContent = result.message;
+                        messageDiv.classList.remove('success-message');
+                        messageDiv.classList.add('error-message');
+                    }
+                })
+                .catch(error => {
+                    messageDiv.textContent = 'Error al registrar el paciente. Por favor, inténtelo de nuevo.';
                     messageDiv.classList.remove('success-message');
                     messageDiv.classList.add('error-message');
-                }
-            })
-            .catch(error => {
-                messageDiv.textContent = 'Error al registrar el paciente. Por favor, inténtelo de nuevo.';
-                messageDiv.classList.remove('success-message');
-                messageDiv.classList.add('error-message');
-            });
+                });
         });
 
-        agendarOtroPacienteBtn.addEventListener('click', function() {
+        agendarOtroPacienteBtn.addEventListener('click', function () {
             form.style.display = 'block';
             confirmationCard.style.display = 'none';
             form.reset();
             messageDiv.textContent = '';
         });
 
-        volverBtn.addEventListener('click', function() {
+        volverBtn.addEventListener('click', function () {
             window.location.href = 'pacientes.php';
         });
     });
