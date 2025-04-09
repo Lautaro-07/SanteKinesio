@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         justify-content: center;
         align-items: center;
         width: 100%;
-        height: 75px;  
+        height: 142px;  
         margin-top: 40px;
         }
 
@@ -156,10 +156,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $servicios = [
                 'Drenaje Linfático',
                 'Kinesiología',
-                'Taller Movimiento Saludable',
                 'Nutrición',
                 'Terapia Manual - RPG',
-                'Traumatología'
+                'Traumatología',
+                'Psicología',
             ];
 
             echo '<div class="div_botones">';
