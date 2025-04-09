@@ -19,7 +19,8 @@ $profesionales_por_servicio = [
     'Terapia Manual - RPG' => ['Lucia Foricher', 'Mariana Ilari'],
     'Traumatología' => ['Miriam Rossello'],
     'Drenaje Linfático' => ['Florencia Goñi', 'Constanza Marinello'],
-    'Kinesiología' => ['Lucia Foricher', 'Alejandro Perez', 'Mauro Robert', 'Gastón Olgiati', 'German Fernandez','Melina Thome'],
+    'Kinesiología' => ['Lucia Foricher', 'Alejandro Perez', 'Mauro Robert', 'Gastón Olgiati', 'German Fernandez','Melina Thome', 'Hernan Lopez'],
+    'Psicología' => ['Leila Heguilein'],
 ];
 
 $profesionales = $profesionales_por_servicio[$servicio] ?? [];
@@ -70,6 +71,7 @@ $servicios_imagenes = [
     'Traumatología' => 'img/drenajeLinfatico.jpg',
     'Drenaje Linfático' => 'img/drenajeLinfatico.jpg',
     'Kinesiología' => 'img/profesionalesIMG.jpg',
+    'Psicología' => 'img/nutricion.jpg',	
 ];
 // Asignar la imagen de fondo según el servicio seleccionado
 $imagen_fondo = isset($servicios_imagenes[$servicio]) ? $servicios_imagenes[$servicio] : 'img/default.jpg';
@@ -82,6 +84,7 @@ $descripciones_servicios = [
     'Terapia Manual - RPG' => 'La terapia manual consta de una sesión individual en camilla con el profesional donde se realiza una evaluación global con el fin de encontrar la causa del dolor. Tambien puede utilizarse para como herramienta preventiva, buscando y trabajando sorbe los factores de riesgo de cada persona.',
     'Kinesiología Dermatofuncional' => 'Mejora la salud y estética de la piel con tratamientos especializados.',
     'Traumatología' => 'Diagnóstico y tratamiento de lesiones musculoesqueléticas.',
+    'Psicología' => 'La psicología es una disciplina que estudia los procesos mentales y el comportamiento humano.',
 ];
 
 $descripcion_servicio = $descripciones_servicios[$servicio] ?? 'Descripción no disponible.';
@@ -204,12 +207,13 @@ $descripcion_servicio = $descripciones_servicios[$servicio] ?? 'Descripción no 
 
     .descripcion_servicio {
         text-align: center;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
-        margin: 20px;
-        padding: 10px;
+        word-spacing: 2px;
+        padding: 11px;
         background-color: #fff;
         border-radius: 100px;
+        color:rgb(51, 50, 50);
         border: 2px solid #9DBC98;
         max-width: 600px;
         margin: auto;
