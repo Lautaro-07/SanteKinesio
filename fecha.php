@@ -15,7 +15,15 @@ $disponibilidadProfesionales['Lucia Foricher (Terapia Manual - RPG)'] = [
     'Tuesday' => ['11:00', '12:00', '13:00', '14:00', '15:00'],
     'Thursday' => ['11:00', '12:00', '13:00', '14:00', '15:00'],
     'Friday' => ['12:00', '13:00', '14:00', '15:00']
-];  
+];
+
+// Agregar horarios adicionales para Mariana Ilari (Terapia Manual - RPG)
+$disponibilidadProfesionales['Mariana Ilari (Terapia Manual - RPG)'] = [
+    'Monday' => ['08:30', '09:30', '10:30', '11:30'],
+    'Wednesday' => ['10:30', '11:30'],
+    'Thursday' => ['08:30', '09:30', '10:30', '11:30'],
+    'Friday' => ['17:00', '18:00']
+]; 
 
 // Conectar a la base de datos
 $mysqli = new mysqli("localhost", "root", "", "sante");
@@ -89,7 +97,7 @@ $imagenes_profesionales = [
     'Constanza Marinello' => 'img/constanza.jpg',     
     'Maria Paz' => 'img/maria.jpg',
     'Lucia Foricher' => 'img/lucia.jpg',
-    'Mariana' => 'img/mariana.jpg',
+    'Mariana Ilari' => 'img/mariana.jpg',
     'Miriam Rossello' => 'img/miriam.jpg',
     'Mauro Robert' => 'img/mauro.jpg',
     'German Fernandez' => 'img/german.jpg',
@@ -97,6 +105,7 @@ $imagenes_profesionales = [
     'Melina Thome' => 'img/melina.jpg',
     'Hernan Lopez' => 'img/hernan.jpg',
     'Alejandro Perez' => 'img/alejandro.jpg',
+    'Leila Heguilein' => 'img/leila.jpg',
 ];
 
 $profesionalesDescripciones = [
@@ -131,6 +140,15 @@ $profesionalesDescripciones = [
         'descripciones' => [
             'Lic. en kinesiología y fisiatría, UCALP',
             'Área de abordaje: rehabilitación traumatológica de adultos y adultos mayores.'
+        ]
+    ],
+    'Leila Heguilein' => [
+        'nombre' => 'Leila Heguilein',
+        'imagen' => '../img/leila.jpg',
+        'descripciones' => [
+            'Licenciada en psicología',
+            'Formacion en profesorado en psicología ',
+            'Actualmente trabajando en el dispositivo de hospital de día y en el dispositivo de adicciones de la clínica privada bahiense'
         ]
     ],
     'Mauro Robert' => [
@@ -171,7 +189,7 @@ $profesionalesDescripciones = [
         ]
     ],
     'Mariana Ilari' => [
-        'nombre' => 'Dra. Mariana Ilari',
+        'nombre' => 'Mariana Ilari',
         'imagen' => '../img/mariana.jpg',
         'descripciones' => [
             'Lic. en kinesiología y fisiatría, UCALP',
@@ -406,17 +424,24 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
             transition: 0.5s;
         }
 
+        .fecha{
+            max-width: 10px;
+        }
+
         @media (max-width: 768px) {
             .calendar-container {
                 width: 100%;
                 padding: 10px;
             }
+            
 
             .logo_container{
                 width: 90%;
                 display: flex;
                 justify-content: start;
             }
+
+            
 
             .profesionalesIMG {
                 width: 90%;
@@ -448,7 +473,7 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
                 text-align: center;
                 font-size: 18px;
                 position: relative;
-                top: 40px;
+                top: 30px;
             }
 
             .servicio_title {
@@ -476,6 +501,10 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
                 position: relative;
                 top: 0;
             }
+
+            .btn-vermas{
+                display: none;
+            }
         }
     </style>
 </head>
@@ -490,7 +519,7 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
 
     <div class="container-profesional">
        <div class="profesionalesIMG">
-       <div class="profesional-info">
+       <div class="profesional-info" onclick="window.location.href='pages/detalle.php?nombre=<?= urlencode($profesional) ?>'">
             <div class="profesional_img">
             <img src="<?= $imagenes_profesionales[$profesional] ?>" alt="<?= $profesional ?>">
             </div>
@@ -505,8 +534,8 @@ $descripcionCorta = isset($profesionalesDescripciones[$profesional]['descripcion
     <section>
     <div class="calendar-container">
         <form action="fecha.php" method="POST" class="fecha_container" id="fechaForm">
-            <input type="text" id="fecha" class="fecha" name="fecha" placeholder="Selecciona la fecha" required><br><br>
-            <input type="hidden" id="hora" name="hora">
+            <input  type="text" id="fecha" class="fecha" name="fecha" placeholder="Selecciona la fecha" required><br><br>
+            <input  type="hidden" id="hora" name="hora">
             <button type="submit" id="confirmarTurno" style="display:none;">Confirmar Fecha y Hora</button>
         </form>
     </div>
