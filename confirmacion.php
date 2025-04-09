@@ -13,7 +13,6 @@ if (!isset($_SESSION['fecha']) || !isset($_SESSION['hora']) || !isset($_SESSION[
 }
 
 // Datos del turno
-$sede = $_SESSION['sede'];
 $servicio = $_SESSION['servicio'];
 $profesional = $_SESSION['profesional'];
 $fecha = $_SESSION['fecha'];
@@ -24,7 +23,7 @@ $to_email = $gmail;
 $subject = 'Confirmación de Turno - Santé Centro De Salud';
 
 // Crear el mensaje de WhatsApp
-$body =  "¡Hola! Tu turno ha sido confirmado.\nDetalles del turno:\nSede: $sede\nServicio: $servicio\nProfesional: $profesional\nFecha: $fecha\nHora: $hora\nPor favor, recuerda traer ropa deportiva cómoda para una óptima sesión.\n¡Te esperamos!";
+$body =  "¡Hola! Tu turno ha sido confirmado.\nDetalles del turno:\nServicio: $servicio\nProfesional: $profesional\nFecha: $fecha\nHora: $hora\nPor favor, recuerda traer ropa deportiva cómoda para una óptima sesión.\n¡Te esperamos!";
 $from_email = 'oligiatielizondo@gmail.com';
 
 // Crear el mensaje de correo electrónico
@@ -79,12 +78,11 @@ $mensaje_email = "
         <div class='email-body'>
             <h2>¡Turno Confirmado con Éxito!</h2>
             <p>Gracias por confiar en Santé Centro De Salud. Aquí están los detalles de tu turno:</p>
-            <p><strong>Sede:</strong> $sede</p>
             <p><strong>Servicio:</strong> $servicio</p>
             <p><strong>Profesional:</strong> $profesional</p>
             <p><strong>Fecha:</strong> $fecha</p>
             <p><strong>Hora:</strong> $hora</p>
-            <p>Por favor, recuerda traer ropa deportiva cómoda para una óptima sesión.</p>
+            <p>¡Recuerda! No contestes este mensaje. Ante cualuier duda escribenos - +542915204351</p>
         </div>
         <div class='email-footer'>
             <p>Santé Centro De Salud</p>
