@@ -1615,21 +1615,20 @@ foreach ($periodo as $fecha) {
                             <?php endforeach; ?>
                         <?php endforeach; ?>
                     <?php else: ?>
-    <?php if ($profesional_trabaja_este_dia && !$dia_deshabilitado): ?>
-        <div class="empty-day-message">
-            <p>No hay pacientes programados para esta fecha.</p>
-        </div>
-    <?php else: ?>
-        <div class="empty-day-message" style="display: none;">
-            <?php if ($dia_deshabilitado): ?>
-                <p>Este día está deshabilitado para el profesional.</p>
-            <?php else: ?>
-                <p>El profesional no atiende en este día de la semana.</p>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
+                        <?php if ($profesional_trabaja_este_dia && !$dia_deshabilitado): ?>
+                            <div class="empty-day-message">
+                                <p>No hay pacientes programados para esta fecha.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="empty-day-message">
+                                <?php if ($dia_deshabilitado): ?>
+                                    <p>Este día está deshabilitado para el profesional.</p>
+                                <?php else: ?>
+                                    <p>El profesional no atiende en este día de la semana.</p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>
